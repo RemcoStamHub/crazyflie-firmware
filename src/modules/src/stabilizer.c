@@ -403,8 +403,8 @@ static void testProps(sensorData_t *sensors)
   if (testState == measureNoiseFloor)
   {
     accX[i] = -sensors->acc.z;
-    accY[i] = sensors->acc.y;
-    accZ[i] = sensors->acc.x;
+    accY[i] = -sensors->acc.y;
+    accZ[i] = -sensors->acc.x;
 
     if (++i >= PROPTEST_NBR_OF_VARIANCE_VALUES)
     {
@@ -423,8 +423,8 @@ static void testProps(sensorData_t *sensors)
     if (i < PROPTEST_NBR_OF_VARIANCE_VALUES)
     {
       accX[i] = -sensors->acc.z;
-      accY[i] = sensors->acc.y;
-      accZ[i] = sensors->acc.x;
+      accY[i] = -sensors->acc.y;
+      accZ[i] = -sensors->acc.x;
       if (pmGetBatteryVoltage() < minSingleLoadedVoltage[motorToTest])
       {
         minSingleLoadedVoltage[motorToTest] = pmGetBatteryVoltage();

@@ -421,15 +421,15 @@ void estimatorKalman(state_t *state, sensorData_t *sensors, control_t *control, 
   // a higher rate (for body rate control).
   if (sensorsReadAcc(&sensors->acc)) {
     accAccumulator.x += -sensors->acc.z;
-    accAccumulator.y += sensors->acc.y;
-    accAccumulator.z += sensors->acc.x;
+    accAccumulator.y += -sensors->acc.y;
+    accAccumulator.z += -sensors->acc.x;
     accAccumulatorCount++;
   }
 
   if (sensorsReadGyro(&sensors->gyro)) {
     gyroAccumulator.x += -sensors->gyro.z;
-    gyroAccumulator.y += sensors->gyro.y;
-    gyroAccumulator.z += sensors->gyro.x;
+    gyroAccumulator.y += -sensors->gyro.y;
+    gyroAccumulator.z += -sensors->gyro.x;
     gyroAccumulatorCount++;
   }
 

@@ -1,12 +1,13 @@
 ## Copy this file to config.mk and modify to get you personal build configuration
 
 PLATFORM = tag
-ESTIMATOR = complementary
+# ESTIMATOR = complementary
+ESTIMATOR = kalman
 POWER_DISTRIBUTION = stock
 
 ## Enable/Disable the Loco Deck by commenting and uncommenting the following two lines 
-CFLAGS += -DDISABLE_LOCO_DECK
-# CFLAGS += -DDECK_FORCE=bcDWM1000
+# CFLAGS += -DDISABLE_LOCO_DECK
+CFLAGS += -DDECK_FORCE=bcDWM1000
 
 ## Force device type string
 # CFLAGS += -DDEVICE_TYPE_STRING_FORCE="CF20"
@@ -30,10 +31,10 @@ CFLAGS += -DDISABLE_LOCO_DECK
 # CFLAGS += -DDECK_FORCE=bcBuzzer:bcLedRing
 
 ## Enable biq quad deck features
-CFLAGS += -DDECK_FORCE=bcBigQuad
-CFLAGS += -DENABLE_BQ_DECK
+# CFLAGS += -DDECK_FORCE=bcBigQuad
+# CFLAGS += -DENABLE_BQ_DECK
 # CFLAGS += -DBQ_DECK_ENABLE_PM
-CFLAGS += -DBQ_DECK_ENABLE_OSD
+# CFLAGS += -DBQ_DECK_ENABLE_OSD
 
 ## Use morse when flashing the LED to indicate that the Crazyflie is calibrated
 # CFLAGS += -DCALIBRATED_LED_MORSE

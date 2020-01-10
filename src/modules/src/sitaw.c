@@ -125,12 +125,12 @@ static void sitAwPostStateUpdateCallOut(const sensorData_t *sensorData,
   bool isFlying = sumRatio > SITAW_TU_IN_FLIGHT_THRESHOLD;
   if (isFlying) {
     /* Test values for Tumbled detection. */
-    sitAwTuTest(sensorData->acc.z);
+    sitAwTuTest(-sensorData->acc.x);
   }
 #endif
 #ifdef SITAW_AR_ENABLED
 /* Test values for At Rest detection. */
-  sitAwARTest(-sensorData->acc.z, sensorData->acc.y, sensorData->acc.x);
+  sitAwARTest(-sensorData->acc.z, -sensorData->acc.y, -sensorData->acc.x);
 #endif
 #endif
 }

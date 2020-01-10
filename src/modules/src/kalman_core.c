@@ -1040,9 +1040,15 @@ void kalmanCoreExternalizeState(const kalmanCoreData_t* this, state_t *state, co
   // Finally, note that these accelerations are in Gs, and not in m/s^2, hence - 1 for removing gravity
   state->acc = (acc_t){
       .timestamp = tick,
+<<<<<<< HEAD
       .x = this->R[0][0]*-sensors->acc.z + this->R[0][1]*sensors->acc.y + this->R[0][2]*sensors->acc.x,
       .y = this->R[1][0]*-sensors->acc.z + this->R[1][1]*sensors->acc.y + this->R[1][2]*sensors->acc.x,
       .z = this->R[2][0]*-sensors->acc.z + this->R[2][1]*sensors->acc.y + this->R[2][2]*sensors->acc.x - 1
+=======
+      .x = this->R[0][0]*-acc->z + this->R[0][1]*-acc->y + this->R[0][2]*-acc->x,
+      .y = this->R[1][0]*-acc->z + this->R[1][1]*-acc->y + this->R[1][2]*-acc->x,
+      .z = this->R[2][0]*-acc->z + this->R[2][1]*-acc->y + this->R[2][2]*-acc->x - 1
+>>>>>>> fixed sensor directions for the current AP orientation, Bigqad deck disabled
   };
 
   // convert the new attitude into Euler YPR
