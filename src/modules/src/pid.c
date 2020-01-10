@@ -66,6 +66,10 @@ float pidUpdate(PidObject* pid, const float measured, const bool updateError)
     output += pid->outP;
 
     float deriv = (pid->error - pid->prevError) / pid->dt;
+    
+    // filter out too large changes, e.g. when yaw goes from -180deg to 180deg
+    if (fabs(pid->error - pid->prevError) > 180) deriv = 0;
+
     if (pid->enableDFilter)
     {
       pid->deriv = lpf2pApply(&pid->dFilter, deriv);

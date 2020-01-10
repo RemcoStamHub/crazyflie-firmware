@@ -12,6 +12,7 @@
 #include "math3d.h"
 
 #define ATTITUDE_UPDATE_DT    (float)(1.0f/ATTITUDE_RATE)
+#define YAW_MAX_DELTA    45.0f
 
 static bool tiltCompensationEnabled = false;
 
@@ -66,6 +67,17 @@ void controllerPid(control_t *control, setpoint_t *setpoint,
     // Rate-controled YAW is moving YAW angle setpoint
     if (setpoint->mode.yaw == modeVelocity) {
        attitudeDesired.yaw += setpoint->attitudeRate.yaw * ATTITUDE_UPDATE_DT;
+#ifdef YAW_MAX_DELTA
+// keep the yaw setpoint within +/- YAW_MAX_DELTA from the current yaw
+       if ((attitudeDesired.yaw-state->attitude.yaw) > YAW_MAX_DELTA)
+       {
+         attitudeDesired.yaw = state->attitude.yaw + YAW_MAX_DELTA;
+       }
+       else if ((attitudeDesired.yaw-state->attitude.yaw) < -YAW_MAX_DELTA)
+       {
+         attitudeDesired.yaw = state->attitude.yaw - YAW_MAX_DELTA;
+       }
+#endif
     } else {
       attitudeDesired.yaw = setpoint->attitude.yaw;
     }
@@ -104,7 +116,7 @@ void controllerPid(control_t *control, setpoint_t *setpoint,
     }
 
     // TODO: Investigate possibility to subtract gyro drift.
-    attitudeControllerCorrectRatePID(sensors->gyro.x, -sensors->gyro.y, sensors->gyro.z,
+    attitudeControllerCorrectRatePID(-sensors->gyro.z, sensors->gyro.y, sensors->gyro.x,
                              rateDesired.roll, rateDesired.pitch, rateDesired.yaw);
 
     attitudeControllerGetActuatorOutput(&control->roll,

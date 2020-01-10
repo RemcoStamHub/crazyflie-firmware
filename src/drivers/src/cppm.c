@@ -41,6 +41,17 @@
 #include "log.h"
 
 
+// #define CPPM_TIMER                   TIM4
+// #define CPPM_TIMER_RCC               RCC_APB1Periph_TIM4
+// #define CPPM_TIMER_CH_Init           TIM_OC1Init
+// #define CPPM_TIMER_CH_PreloadConfig  TIM_OC1PreloadConfig
+// #define CPPM_TIMER_CH_SetCompare     TIM_SetCompare1
+// #define CPPM_GPIO_RCC                RCC_AHB1Periph_GPIOB
+// #define CPPM_GPIO_PORT               GPIOB
+// #define CPPM_GPIO_PIN                GPIO_Pin_6
+// #define CPPM_GPIO_SOURCE             GPIO_PinSource6
+// #define CPPM_GPIO_AF                 GPIO_AF_TIM4
+
 #define CPPM_TIMER                   TIM14
 #define CPPM_TIMER_RCC               RCC_APB1Periph_TIM14
 #define CPPM_TIMER_CH_Init           TIM_OC1Init
@@ -54,7 +65,7 @@
 
 #define CPPM_TIM_PRESCALER           (84 - 1) // TIM14 clock running at sysclk/2. Will give 1us tick.
 
-#define CPPM_MIN_PPM_USEC            1150
+#define CPPM_MIN_PPM_USEC            1100
 #define CPPM_MAX_PPM_USEC            1900
 
 static xQueueHandle captureQueue;
@@ -120,7 +131,7 @@ void cppmClearQueue(void)
   xQueueReset(captureQueue);
 }
 
-float cppmConvert2Float(uint16_t timestamp, float min, float max)
+float cppmConvert2Float(uint16_t timestamp, float min, float max, float deadband)
 {
   if (timestamp < CPPM_MIN_PPM_USEC)
   {
@@ -131,8 +142,29 @@ float cppmConvert2Float(uint16_t timestamp, float min, float max)
     timestamp = CPPM_MAX_PPM_USEC;
   }
 
-  float scale = (float)(timestamp - CPPM_MIN_PPM_USEC) / (float)(CPPM_MAX_PPM_USEC - CPPM_MIN_PPM_USEC);
-
+  float scale_raw = (float)(timestamp - CPPM_MIN_PPM_USEC) / (float)(CPPM_MAX_PPM_USEC - CPPM_MIN_PPM_USEC);
+  float scale;
+  if (deadband == 0)
+  {
+    scale = scale_raw;
+  }
+  else
+  {
+    if (scale_raw < (0.5f - deadband/2) )
+    {
+      scale = scale_raw / (1.f - deadband);
+    }
+    else if (scale_raw > (0.5f + deadband/2) )
+    {
+      scale = (scale_raw - deadband) / (1.f - deadband);
+    }
+    else
+    {
+      scale = 0.5f;
+    }
+    
+  }
+  
   return min + ((max - min) * scale);
 }
 

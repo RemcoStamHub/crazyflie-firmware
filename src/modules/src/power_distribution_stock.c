@@ -34,6 +34,7 @@
 #include "platform.h"
 #include "motors.h"
 #include "debug.h"
+#include "math.h"
 
 static bool motorSetEnable = false;
 
@@ -83,24 +84,43 @@ void powerStop()
 
 void powerDistribution(const control_t *control)
 {
-  #ifdef QUAD_FORMATION_X
-    int16_t r = control->roll / 2.0f;
-    int16_t p = control->pitch / 2.0f;
-    motorPower.m1 = limitThrust(control->thrust - r + p + control->yaw);
-    motorPower.m2 = limitThrust(control->thrust - r - p - control->yaw);
-    motorPower.m3 =  limitThrust(control->thrust + r - p + control->yaw);
-    motorPower.m4 =  limitThrust(control->thrust + r + p - control->yaw);
-  #else // QUAD_FORMATION_NORMAL
-    motorPower.m1 = limitThrust(control->thrust + control->pitch +
-                               control->yaw);
-    motorPower.m2 = limitThrust(control->thrust - control->roll -
-                               control->yaw);
-    motorPower.m3 =  limitThrust(control->thrust - control->pitch +
-                               control->yaw);
-    motorPower.m4 =  limitThrust(control->thrust + control->roll -
-                               control->yaw);
-  #endif
+  static float gam_max = 60/180*3.1416;
+  static int16_t roll_trim = 0; //-6000; // 100% = 32767
+  static int16_t pitch_trim = 0; //-10000; // 100% = 32767
+  static int16_t yaw_trim = 0; //3000; // 100% = 32767
+  static int16_t act_max = 32767;
+  
+  static float gam_in, gam, servo_max, yaw_scale;
+  static int32_t croll, cpitch, cyaw;
 
+  croll = control->roll;
+  cpitch = control->pitch ;
+  cyaw = control->yaw;
+
+  // Actuator deflection for the given yaw command
+  gam_in = gam_max*(float)cyaw/act_max;
+
+  // check, if saturation will occur, if so, saturate the yaw command
+  servo_max = fabs(yaw_trim) + fabs(control->yaw) + 0.4*fabs(cos(gam_in)*cpitch) + 0.2*fabs(sin(gam_in)*croll);
+
+  if (servo_max > act_max)
+  {
+    if (gam_in > 0) gam = gam_in - (servo_max - act_max)/act_max*gam_max;
+    else gam = gam_in + (servo_max - act_max)/act_max*gam_max;
+  }
+  else
+  {
+    gam = gam_in;
+  }
+
+  if (gam_in == 0) yaw_scale=1;
+  else yaw_scale = gam/gam_in;
+
+  motorPower.m2 = limitThrust(act_max + 0.2f * croll * sinf(gam) + 0.4f * cpitch * cosf(gam) - yaw_scale*cyaw - yaw_trim + pitch_trim ); // left servo
+  motorPower.m3 = limitThrust(act_max - 0.2f * croll * sinf(gam) - 0.4f * cpitch * cosf(gam) - yaw_scale*cyaw - yaw_trim - pitch_trim ); // right servo
+  motorPower.m4 = limitThrust( 0.5f * croll * cosf(gam) + 0.25f * cpitch * sinf(gam) + control->thrust * (1 + roll_trim / act_max) ); // left motor
+  motorPower.m1 = limitThrust(-0.5f * croll * cosf(gam) - 0.25f * cpitch * sinf(gam) + control->thrust * (1 - roll_trim / act_max) ); // right motor
+  
   if (motorSetEnable)
   {
     motorsSetRatio(MOTOR_M1, motorPowerSet.m1);

@@ -81,10 +81,13 @@ static void bigquadInit(DeckInfo *info)
 
   DEBUG_PRINT("Switching to brushless.\n");
   motorsInit(motorMapBigQuadDeck);
+
+#ifdef DISABLE_LOCO_DECK
   extRxInit();
-#ifdef BQ_DECK_ENABLE_PM
-  pmEnableExtBatteryVoltMeasuring(BIGQUAD_BAT_VOLT_PIN, BIGQUAD_BAT_VOLT_MULT);
-  pmEnableExtBatteryCurrMeasuring(BIGQUAD_BAT_CURR_PIN, BIGQUAD_BAT_AMP_PER_VOLT);
+  #ifdef BQ_DECK_ENABLE_PM
+    pmEnableExtBatteryVoltMeasuring(BIGQUAD_BAT_VOLT_PIN, BIGQUAD_BAT_VOLT_MULT);
+    pmEnableExtBatteryCurrMeasuring(BIGQUAD_BAT_CURR_PIN, BIGQUAD_BAT_AMP_PER_VOLT);
+  #endif
 #endif
 
 #ifdef BQ_DECK_ENABLE_OSD

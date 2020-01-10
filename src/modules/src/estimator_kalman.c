@@ -420,16 +420,16 @@ void estimatorKalman(state_t *state, sensorData_t *sensors, control_t *control, 
   // slower than the IMU loop, but the IMU information is required externally at
   // a higher rate (for body rate control).
   if (sensorsReadAcc(&sensors->acc)) {
-    accAccumulator.x += sensors->acc.x;
+    accAccumulator.x += -sensors->acc.z;
     accAccumulator.y += sensors->acc.y;
-    accAccumulator.z += sensors->acc.z;
+    accAccumulator.z += sensors->acc.x;
     accAccumulatorCount++;
   }
 
   if (sensorsReadGyro(&sensors->gyro)) {
-    gyroAccumulator.x += sensors->gyro.x;
+    gyroAccumulator.x += -sensors->gyro.z;
     gyroAccumulator.y += sensors->gyro.y;
-    gyroAccumulator.z += sensors->gyro.z;
+    gyroAccumulator.z += sensors->gyro.x;
     gyroAccumulatorCount++;
   }
 

@@ -130,7 +130,7 @@ static void sitAwPostStateUpdateCallOut(const sensorData_t *sensorData,
 #endif
 #ifdef SITAW_AR_ENABLED
 /* Test values for At Rest detection. */
-  sitAwARTest(sensorData->acc.x, sensorData->acc.y, sensorData->acc.z);
+  sitAwARTest(-sensorData->acc.z, sensorData->acc.y, sensorData->acc.x);
 #endif
 #endif
 }

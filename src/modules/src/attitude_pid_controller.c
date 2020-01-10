@@ -31,12 +31,13 @@
 #include "pid.h"
 #include "param.h"
 #include "log.h"
+#include "commander.h"
 
 #define ATTITUDE_LPF_CUTOFF_FREQ      15.0f
 #define ATTITUDE_LPF_ENABLE false
-#define ATTITUDE_RATE_LPF_CUTOFF_FREQ 30.0f
-#define ATTITUDE_RATE_LPF_ENABLE false
-
+#define ATTITUDE_RATE_LPF_CUTOFF_FREQ 15.0f
+#define ATTITUDE_RATE_LPF_ENABLE true
+#define ATTITUDE_RATE_FF_YAW 600.0f
 
 static inline int16_t saturateSignedInt16(float in)
 {
@@ -109,7 +110,13 @@ void attitudeControllerCorrectRatePID(
   pitchOutput = saturateSignedInt16(pidUpdate(&pidPitchRate, pitchRateActual, true));
 
   pidSetDesired(&pidYawRate, yawRateDesired);
-  yawOutput = saturateSignedInt16(pidUpdate(&pidYawRate, yawRateActual, true));
+
+  // there is probably a more elegant way to get the yaw rate setpoint...
+  static setpoint_t setpoint;
+  static state_t state;
+  commanderGetSetpoint(&setpoint, &state);
+  // adding a feedforward term
+  yawOutput = saturateSignedInt16(pidUpdate(&pidYawRate, yawRateActual, true) + ATTITUDE_RATE_FF_YAW*setpoint.attitudeRate.yaw);
 }
 
 void attitudeControllerCorrectAttitudePID(
@@ -132,7 +139,13 @@ void attitudeControllerCorrectAttitudePID(
   else if (yawError < -180.0f)
     yawError += 360.0f;
   pidSetError(&pidYaw, yawError);
-  *yawRateDesired = pidUpdate(&pidYaw, eulerYawActual, false);
+  
+  // there is probably a more elegant way to get the yaw rate setpoint...
+  static setpoint_t setpoint;
+  static state_t state;
+  commanderGetSetpoint(&setpoint, &state);
+
+  *yawRateDesired = pidUpdate(&pidYaw, eulerYawActual, false) + setpoint.attitudeRate.yaw;
 }
 
 void attitudeControllerResetRollAttitudePID(void)

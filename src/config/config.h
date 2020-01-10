@@ -50,7 +50,7 @@
 
 #ifdef STM32F4XX
   #define QUAD_FORMATION_X
-
+  
   #define CONFIG_BLOCK_ADDRESS    (2048 * (64-1))
   #define MCU_ID_ADDRESS          0x1FFF7A10
   #define MCU_FLASH_SIZE_ADDRESS  0x1FFF7A22

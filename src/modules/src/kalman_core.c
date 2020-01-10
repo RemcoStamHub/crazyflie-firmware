@@ -470,8 +470,8 @@ void kalmanCoreUpdateWithFlow(kalmanCoreData_t* this, const flowMeasurement_t *f
   float thetapix = DEG_TO_RAD * 4.2f;
   //~~~ Body rates ~~~
   // TODO check if this is feasible or if some filtering has to be done
-  float omegax_b = gyro->x * DEG_TO_RAD;
-  float omegay_b = gyro->y * DEG_TO_RAD;
+  float omegax_b = -sensors->gyro.z * DEG_TO_RAD;
+  float omegay_b = sensors->gyro.y * DEG_TO_RAD;
 
   // ~~~ Moves the body velocity into the global coordinate system ~~~
   // [bar{x},bar{y},bar{z}]_G = R*[bar{x},bar{y},bar{z}]_B
@@ -1040,9 +1040,9 @@ void kalmanCoreExternalizeState(const kalmanCoreData_t* this, state_t *state, co
   // Finally, note that these accelerations are in Gs, and not in m/s^2, hence - 1 for removing gravity
   state->acc = (acc_t){
       .timestamp = tick,
-      .x = this->R[0][0]*acc->x + this->R[0][1]*acc->y + this->R[0][2]*acc->z,
-      .y = this->R[1][0]*acc->x + this->R[1][1]*acc->y + this->R[1][2]*acc->z,
-      .z = this->R[2][0]*acc->x + this->R[2][1]*acc->y + this->R[2][2]*acc->z - 1
+      .x = this->R[0][0]*-sensors->acc.z + this->R[0][1]*sensors->acc.y + this->R[0][2]*sensors->acc.x,
+      .y = this->R[1][0]*-sensors->acc.z + this->R[1][1]*sensors->acc.y + this->R[1][2]*sensors->acc.x,
+      .z = this->R[2][0]*-sensors->acc.z + this->R[2][1]*sensors->acc.y + this->R[2][2]*sensors->acc.x - 1
   };
 
   // convert the new attitude into Euler YPR

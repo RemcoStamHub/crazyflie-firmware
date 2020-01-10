@@ -7,7 +7,9 @@ CRAZYFLIE_BASE ?= ./
 
 # Put your personal build config in tools/make/config.mk and DO NOT COMMIT IT!
 # Make a copy of tools/make/config.mk.example to get you started
--include tools/make/config.mk
+include tools/make/config.mk
+
+# CFLAGS += -DENABLE_BQ_DECK
 
 CFLAGS += $(EXTRA_CFLAGS)
 
