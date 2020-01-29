@@ -4,10 +4,12 @@ PLATFORM = tag
 # ESTIMATOR = complementary
 ESTIMATOR = kalman
 POWER_DISTRIBUTION = stock
+CFLAGS += -DDECK_FORCE=bcBigQuad:bcDWM1000
+
 
 ## Enable/Disable the Loco Deck by commenting and uncommenting the following two lines 
 # CFLAGS += -DDISABLE_LOCO_DECK
-CFLAGS += -DDECK_FORCE=bcDWM1000
+# CFLAGS += -DDECK_FORCE=bcDWM1000
 
 ## Force device type string
 # CFLAGS += -DDEVICE_TYPE_STRING_FORCE="CF20"
@@ -32,7 +34,7 @@ CFLAGS += -DDECK_FORCE=bcDWM1000
 
 ## Enable biq quad deck features
 # CFLAGS += -DDECK_FORCE=bcBigQuad
-# CFLAGS += -DENABLE_BQ_DECK
+CFLAGS += -DENABLE_BQ_DECK
 # CFLAGS += -DBQ_DECK_ENABLE_PM
 # CFLAGS += -DBQ_DECK_ENABLE_OSD
 
