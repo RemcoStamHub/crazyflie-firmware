@@ -77,8 +77,8 @@ bool powerDistributionTest(void)
 void powerStop()
 {
   motorsSetRatio(MOTOR_M1, 0);
-  motorsSetRatio(MOTOR_M2, 0);
-  motorsSetRatio(MOTOR_M3, 0);
+  motorsSetRatio(MOTOR_M2, 32767);
+  motorsSetRatio(MOTOR_M3, 32767);
   motorsSetRatio(MOTOR_M4, 0);
 }
 

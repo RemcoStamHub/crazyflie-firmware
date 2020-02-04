@@ -64,7 +64,7 @@ struct this_s {
 };
 
 // Maximum roll/pitch angle permited
-static float rpLimit  = 20;
+static float rpLimit  = 30;
 static float rpLimitOverhead = 1.10f;
 // Velocity maximums
 static float xyVelMax = 1.0f;
@@ -80,8 +80,8 @@ static const float thrustScale = 1000.0f;
 static struct this_s this = {
   .pidVX = {
     .init = {
-      .kp = 25.0f,
-      .ki = 1.0f,
+      .kp = 8.0f,
+      .ki = 0.0f,
       .kd = 0.0f,
     },
     .pid.dt = DT,
@@ -89,8 +89,8 @@ static struct this_s this = {
 
   .pidVY = {
     .init = {
-      .kp = 25.0f,
-      .ki = 1.0f,
+      .kp = 8.0f,
+      .ki = 0.0f,
       .kd = 0.0f,
     },
     .pid.dt = DT,
@@ -98,8 +98,8 @@ static struct this_s this = {
 
   .pidVZ = {
     .init = {
-      .kp = 25,
-      .ki = 15,
+      .kp = 12.5,
+      .ki = 0,
       .kd = 0,
     },
     .pid.dt = DT,
@@ -107,7 +107,7 @@ static struct this_s this = {
 
   .pidX = {
     .init = {
-      .kp = 2.0f,
+      .kp = 4.0f,
       .ki = 0,
       .kd = 0,
     },
@@ -116,7 +116,7 @@ static struct this_s this = {
 
   .pidY = {
     .init = {
-      .kp = 2.0f,
+      .kp = 4.0f,
       .ki = 0,
       .kd = 0,
     },
@@ -125,14 +125,14 @@ static struct this_s this = {
 
   .pidZ = {
     .init = {
-      .kp = 2.0f,
+      .kp = 5.0f,
       .ki = 0.5,
       .kd = 0,
     },
     .pid.dt = DT,
   },
 
-  .thrustBase = 36000,
+  .thrustBase = 30000,
   .thrustMin  = 20000,
 };
 #endif
