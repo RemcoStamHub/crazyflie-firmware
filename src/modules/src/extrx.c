@@ -56,7 +56,7 @@
 
 #define EXTRX_SIGN_ROLL    (1)
 #define EXTRX_SIGN_PITCH   (-1)
-#define EXTRX_SIGN_YAW     (1)
+#define EXTRX_SIGN_YAW     (-1)
 
 #define EXTRX_SCALE_ROLL   (40.0f)
 #define EXTRX_SCALE_PITCH  (40.0f)

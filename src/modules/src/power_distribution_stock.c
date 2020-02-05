@@ -116,8 +116,8 @@ void powerDistribution(const control_t *control)
   if (gam_in == 0) yaw_scale=1;
   else yaw_scale = gam/gam_in;
 
-  motorPower.m2 = limitThrust(act_max + 0.2f * croll * sinf(gam) + 0.4f * cpitch * cosf(gam) - yaw_scale*cyaw - yaw_trim + pitch_trim ); // left servo
-  motorPower.m3 = limitThrust(act_max - 0.2f * croll * sinf(gam) - 0.4f * cpitch * cosf(gam) - yaw_scale*cyaw - yaw_trim - pitch_trim ); // right servo
+  motorPower.m2 = limitThrust(act_max + 0.2f * croll * sinf(gam) + 0.4f * cpitch * cosf(gam) + yaw_scale*cyaw + yaw_trim + pitch_trim ); // left servo
+  motorPower.m3 = limitThrust(act_max - 0.2f * croll * sinf(gam) - 0.4f * cpitch * cosf(gam) + yaw_scale*cyaw + yaw_trim - pitch_trim ); // right servo
   motorPower.m4 = limitThrust( 0.5f * croll * cosf(gam) + 0.25f * cpitch * sinf(gam) + control->thrust * (1 + roll_trim / act_max) ); // left motor
   motorPower.m1 = limitThrust(-0.5f * croll * cosf(gam) - 0.25f * cpitch * sinf(gam) + control->thrust * (1 - roll_trim / act_max) ); // right motor
   

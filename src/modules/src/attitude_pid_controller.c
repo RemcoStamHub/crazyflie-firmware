@@ -145,7 +145,7 @@ void attitudeControllerCorrectAttitudePID(
   static state_t state;
   commanderGetSetpoint(&setpoint, &state);
 
-  *yawRateDesired = pidUpdate(&pidYaw, eulerYawActual, false) + setpoint.attitudeRate.yaw;
+  *yawRateDesired = pidUpdate(&pidYaw, eulerYawActual, false);// + setpoint.attitudeRate.yaw; // not sure why I introduced the rate term before, doesn't seem to do anything
 }
 
 void attitudeControllerResetRollAttitudePID(void)
