@@ -69,8 +69,11 @@ static float rpLimitOverhead = 1.10f;
 // Velocity maximums
 static float xyVelMax = 1.0f;
 static float zVelMax  = 1.0f;
-static float velMaxOverhead = 1.10f;
+// static float velMaxOverhead = 1.10f;
 static const float thrustScale = 1000.0f;
+
+float bank_roll = 0.0f;
+float bank_pitch = 0.0f;
 
 #define DT (float)(1.0f/POSITION_RATE)
 #define POSITION_LPF_CUTOFF_FREQ 20.0f
@@ -80,7 +83,7 @@ static const float thrustScale = 1000.0f;
 static struct this_s this = {
   .pidVX = {
     .init = {
-      .kp = 8.0f,
+      .kp = 0.0f,
       .ki = 0.0f,
       .kd = 0.0f,
     },
@@ -89,7 +92,7 @@ static struct this_s this = {
 
   .pidVY = {
     .init = {
-      .kp = 8.0f,
+      .kp = 0.0f,
       .ki = 0.0f,
       .kd = 0.0f,
     },
@@ -98,7 +101,7 @@ static struct this_s this = {
 
   .pidVZ = {
     .init = {
-      .kp = 12.5,
+      .kp = 0,
       .ki = 0,
       .kd = 0,
     },
@@ -107,32 +110,32 @@ static struct this_s this = {
 
   .pidX = {
     .init = {
-      .kp = 4.0f,
+      .kp = 32.0f,
       .ki = 0,
-      .kd = 0,
+      .kd = 8.0f,
     },
     .pid.dt = DT,
   },
 
   .pidY = {
     .init = {
-      .kp = 4.0f,
+      .kp = 17.0f,
       .ki = 0,
-      .kd = 0,
+      .kd = 10.0f,
     },
     .pid.dt = DT,
   },
 
   .pidZ = {
     .init = {
-      .kp = 5.0f,
-      .ki = 0.5,
-      .kd = 0,
+      .kp = 62.5f,
+      .ki = 6.0f,
+      .kd = 12.5f,
     },
     .pid.dt = DT,
   },
 
-  .thrustBase = 30000,
+  .thrustBase = 33000,
   .thrustMin  = 20000,
 };
 #endif
@@ -164,33 +167,65 @@ static float runPid(float input, struct pidAxis_s *axis, float setpoint, float d
 void positionController(float* thrust, attitude_t *attitude, setpoint_t *setpoint,
                                                              const state_t *state)
 {
-  this.pidX.pid.outputLimit = xyVelMax * velMaxOverhead;
-  this.pidY.pid.outputLimit = xyVelMax * velMaxOverhead;
-  // The ROS landing detector will prematurely trip if
-  // this value is below 0.5
-  this.pidZ.pid.outputLimit = fmaxf(zVelMax, 0.5f)  * velMaxOverhead;
+  // this.pidX.pid.outputLimit = xyVelMax * velMaxOverhead;
+  // this.pidY.pid.outputLimit = xyVelMax * velMaxOverhead;
+  // // The ROS landing detector will prematurely trip if
+  // // this value is below 0.5
+  // this.pidZ.pid.outputLimit = fmaxf(zVelMax, 0.5f)  * velMaxOverhead;
 
   float cosyaw = cosf(state->attitude.yaw * (float)M_PI / 180.0f);
   float sinyaw = sinf(state->attitude.yaw * (float)M_PI / 180.0f);
-  float bodyvx = setpoint->velocity.x;
-  float bodyvy = setpoint->velocity.y;
+  
+  // float bodyvx = setpoint->velocity.x;
+  // float bodyvy = setpoint->velocity.y;
 
   // X, Y
-  if (setpoint->mode.x == modeAbs) {
-    setpoint->velocity.x = runPid(state->position.x, &this.pidX, setpoint->position.x, DT);
-  } else if (setpoint->velocity_body) {
-    setpoint->velocity.x = bodyvx * cosyaw - bodyvy * sinyaw;
-  }
-  if (setpoint->mode.y == modeAbs) {
-    setpoint->velocity.y = runPid(state->position.y, &this.pidY, setpoint->position.y, DT);
-  } else if (setpoint->velocity_body) {
-    setpoint->velocity.y = bodyvy * cosyaw + bodyvx * sinyaw;
-  }
-  if (setpoint->mode.z == modeAbs) {
-    setpoint->velocity.z = runPid(state->position.z, &this.pidZ, setpoint->position.z, DT);
-  }
+  // if (setpoint->mode.x == modeAbs) {
+  //   setpoint->velocity.x = runPid(state->position.x, &this.pidX, setpoint->position.x, DT);
+  // } else if (setpoint->velocity_body) {
+  //   setpoint->velocity.x = bodyvx * cosyaw - bodyvy * sinyaw;
+  // }
+  // if (setpoint->mode.y == modeAbs) {
+  //   setpoint->velocity.y = runPid(state->position.y, &this.pidY, setpoint->position.y, DT);
+  // } else if (setpoint->velocity_body) {
+  //   setpoint->velocity.y = bodyvy * cosyaw + bodyvx * sinyaw;
+  // }
+  // if (setpoint->mode.z == modeAbs) {
+  //   setpoint->velocity.z = runPid(state->position.z, &this.pidZ, setpoint->position.z, DT);
+  // }
 
-  velocityController(thrust, attitude, setpoint, state);
+  // velocityController(thrust, attitude, setpoint, state);
+
+
+  this.pidX.pid.outputLimit = rpLimit * rpLimitOverhead;
+  this.pidY.pid.outputLimit = rpLimit * rpLimitOverhead;
+  this.pidZ.pid.outputLimit = (UINT16_MAX / 2 / thrustScale);
+
+  float setp_body_x = setpoint->position.x * cosyaw + setpoint->position.y * sinyaw;
+  float setp_body_y = -setpoint->position.x * sinyaw + setpoint->position.y * cosyaw;
+
+  float state_body_x = state->position.x * cosyaw + state->position.y * sinyaw;
+  float state_body_y = -state->position.x * sinyaw + state->position.y * cosyaw;
+  
+  float pitchRaw = -runPid(state_body_x, &this.pidX, setp_body_x, DT);
+  float rollRaw = -runPid(state_body_y, &this.pidY, setp_body_y, DT);
+  float thrustRaw = runPid(state->position.z, &this.pidZ, setpoint->position.z, DT);
+
+  attitude->roll  = constrain(rollRaw,  -rpLimit, rpLimit);
+  attitude->pitch = constrain(pitchRaw, -rpLimit, rpLimit);
+
+  bank_roll = attitude->roll;
+  bank_pitch = attitude->pitch;
+  
+  // attitude->roll = 0;
+  // attitude->pitch = 0;
+
+  // Scale the thrust and add feed forward term
+  *thrust = thrustRaw*thrustScale + this.thrustBase;
+  // Check for minimum thrust
+  if (*thrust < this.thrustMin) {
+    *thrust = this.thrustMin;
+  }
 }
 
 void velocityController(float* thrust, attitude_t *attitude, setpoint_t *setpoint,
@@ -206,12 +241,12 @@ void velocityController(float* thrust, attitude_t *attitude, setpoint_t *setpoin
   float rollRaw  = runPid(state->velocity.x, &this.pidVX, setpoint->velocity.x, DT);
   float pitchRaw = runPid(state->velocity.y, &this.pidVY, setpoint->velocity.y, DT);
 
-  float yawRad = state->attitude.yaw * (float)M_PI / 180;
-  attitude->pitch = -(rollRaw  * cosf(yawRad)) - (pitchRaw * sinf(yawRad));
-  attitude->roll  = -(pitchRaw * cosf(yawRad)) + (rollRaw  * sinf(yawRad));
+  // float yawRad = state->attitude.yaw * (float)M_PI / 180;
+  // attitude->pitch = -(rollRaw  * cosf(yawRad)) - (pitchRaw * sinf(yawRad));
+  // attitude->roll  = -(pitchRaw * cosf(yawRad)) + (rollRaw  * sinf(yawRad));
 
-  attitude->roll  = constrain(attitude->roll,  -rpLimit, rpLimit);
-  attitude->pitch = constrain(attitude->pitch, -rpLimit, rpLimit);
+  attitude->roll  = constrain(rollRaw,  -rpLimit, rpLimit);
+  attitude->pitch = constrain(pitchRaw, -rpLimit, rpLimit);
 
   // Thrust
   float thrustRaw = runPid(state->velocity.z, &this.pidVZ, setpoint->velocity.z, DT);
@@ -255,13 +290,16 @@ LOG_ADD(LOG_FLOAT, Zp, &this.pidZ.pid.outP)
 LOG_ADD(LOG_FLOAT, Zi, &this.pidZ.pid.outI)
 LOG_ADD(LOG_FLOAT, Zd, &this.pidZ.pid.outD)
 
-LOG_ADD(LOG_FLOAT, VXp, &this.pidVX.pid.outP)
+// LOG_ADD(LOG_FLOAT, VXp, &this.pidVX.pid.outP)
 LOG_ADD(LOG_FLOAT, VXi, &this.pidVX.pid.outI)
 LOG_ADD(LOG_FLOAT, VXd, &this.pidVX.pid.outD)
 
-LOG_ADD(LOG_FLOAT, VZp, &this.pidVZ.pid.outP)
+// LOG_ADD(LOG_FLOAT, VZp, &this.pidVZ.pid.outP)
 LOG_ADD(LOG_FLOAT, VZi, &this.pidVZ.pid.outI)
 LOG_ADD(LOG_FLOAT, VZd, &this.pidVZ.pid.outD)
+
+LOG_ADD(LOG_FLOAT, VXp, &bank_pitch)
+LOG_ADD(LOG_FLOAT, VZp, &bank_roll)
 
 LOG_GROUP_STOP(posCtl)
 
