@@ -1017,7 +1017,17 @@ void kalmanCoreFinalize(kalmanCoreData_t* this, uint32_t tick)
   assertStateNotNaN(this);
 }
 
-void kalmanCoreExternalizeState(const kalmanCoreData_t* this, state_t *state, const Axis3f *acc, uint32_t tick)
+#include "sensfusion6.h"
+
+#define ATTITUDE_UPDATE_RATE RATE_250_HZ
+#define ATTITUDE_UPDATE_DT 1.0/ATTITUDE_UPDATE_RATE
+
+float compl_roll = 0.0f;
+float compl_pitch = 0.0f;
+float compl_yaw = 0.0f;
+    
+
+void kalmanCoreExternalizeState(const kalmanCoreData_t* this, state_t *state, const Axis3f *acc, const Axis3f *gyro, uint32_t tick)
 {
   // position state is already in world frame
   state->position = (point_t){
@@ -1053,26 +1063,47 @@ void kalmanCoreExternalizeState(const kalmanCoreData_t* this, state_t *state, co
 
   // convert the new attitude into Euler YPR
   float yaw = atan2f(2*(this->q[1]*this->q[2]+this->q[0]*this->q[3]) , this->q[0]*this->q[0] + this->q[1]*this->q[1] - this->q[2]*this->q[2] - this->q[3]*this->q[3]);
-  float pitch = asinf(-2*(this->q[1]*this->q[3] - this->q[0]*this->q[2]));
-  float roll = atan2f(2*(this->q[2]*this->q[3]+this->q[0]*this->q[1]) , this->q[0]*this->q[0] - this->q[1]*this->q[1] - this->q[2]*this->q[2] + this->q[3]*this->q[3]);
+  // float pitch = asinf(-2*(this->q[1]*this->q[3] - this->q[0]*this->q[2]));
+  // float roll = atan2f(2*(this->q[2]*this->q[3]+this->q[0]*this->q[1]) , this->q[0]*this->q[0] - this->q[1]*this->q[1] - this->q[2]*this->q[2] + this->q[3]*this->q[3]);
 
-  // Save attitude, adjusted for the legacy CF2 body coordinate system
-  state->attitude = (attitude_t){
-      .timestamp = tick,
-      .roll = roll*RAD_TO_DEG,
-      .pitch = -pitch*RAD_TO_DEG,
-      .yaw = yaw*RAD_TO_DEG
-  };
+  // // Save attitude, adjusted for the legacy CF2 body coordinate system
+  // state->attitude = (attitude_t){
+  //     .timestamp = tick,
+  //     .roll = roll*RAD_TO_DEG,
+  //     .pitch = -pitch*RAD_TO_DEG,
+  //     .yaw = yaw*RAD_TO_DEG
+  // };
 
-  // Save quaternion, hopefully one day this could be used in a better controller.
-  // Note that this is not adjusted for the legacy coordinate system
-  state->attitudeQuaternion = (quaternion_t){
-      .timestamp = tick,
-      .w = this->q[0],
-      .x = this->q[1],
-      .y = this->q[2],
-      .z = this->q[3]
-  };
+  // // Save quaternion, hopefully one day this could be used in a better controller.
+  // // Note that this is not adjusted for the legacy coordinate system
+  // state->attitudeQuaternion = (quaternion_t){
+  //     .timestamp = tick,
+  //     .w = this->q[0],
+  //     .x = this->q[1],
+  //     .y = this->q[2],
+  //     .z = this->q[3]
+  // };
+
+  if (RATE_DO_EXECUTE(ATTITUDE_UPDATE_RATE, tick)) {
+    sensfusion6UpdateQ(-gyro->z, -gyro->y, -gyro->x,
+                       -acc->z, -acc->y, -acc->x,
+                       ATTITUDE_UPDATE_DT);
+
+    // Save attitude, adjusted for the legacy CF2 body coordinate system
+    sensfusion6GetEulerRPY(&compl_roll, &compl_pitch, &compl_yaw);
+    
+    // Save quaternion, hopefully one day this could be used in a better controller.
+    // Note that this is not adjusted for the legacy coordinate system
+    sensfusion6GetQuaternion(
+      &state->attitudeQuaternion.x,
+      &state->attitudeQuaternion.y,
+      &state->attitudeQuaternion.z,
+      &state->attitudeQuaternion.w);
+  }
+  state->attitude.roll=compl_roll;
+  state->attitude.pitch=compl_pitch;
+  // state->attitude.yaw=compl_yaw;
+  state->attitude.yaw=yaw*RAD_TO_DEG;
 
   assertStateNotNaN(this);
 }

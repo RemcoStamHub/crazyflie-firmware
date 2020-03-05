@@ -60,6 +60,8 @@
 #include "estimator_kalman.h"
 #include "kalman_supervisor.h"
 
+#include "stm32f4xx.h"
+
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "task.h"
@@ -77,7 +79,7 @@
 
 #define DEBUG_MODULE "ESTKALMAN"
 #include "debug.h"
-
+#include "sensfusion6.h"
 
 // #define KALMAN_USE_BARO_UPDATE
 
@@ -403,7 +405,7 @@ static void kalmanTask(void* parameters) {
      * This is done every round, since the external state includes some sensor data
      */
     xSemaphoreTake(dataMutex, portMAX_DELAY);
-    kalmanCoreExternalizeState(&coreData, &taskEstimatorState, &accSnapshot, osTick);
+    kalmanCoreExternalizeState(&coreData, &taskEstimatorState, &accSnapshot, &gyroSnapshot, osTick); // adjusted to only update position & velocity
     xSemaphoreGive(dataMutex);
 
     STATS_CNT_RATE_EVENT(&updateCounter);
@@ -601,6 +603,8 @@ void estimatorKalmanInit(void) {
   xSemaphoreGive(dataMutex);
 
   kalmanCoreInit(&coreData);
+
+  sensfusion6Init();
 }
 
 static bool appendMeasurement(xQueueHandle queue, void *measurement)
@@ -687,7 +691,7 @@ bool estimatorKalmanEnqueueSweepAngles(const sweepAngleMeasurement_t *angles)
 
 bool estimatorKalmanTest(void)
 {
-  return isInit;
+  return (isInit & sensfusion6Test());
 }
 
 void estimatorKalmanGetEstimatedPos(point_t* pos) {
