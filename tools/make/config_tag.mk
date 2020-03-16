@@ -1,12 +1,12 @@
 ## Copy this file to config.mk and modify to get you personal build configuration
 
-PLATFORM = cf2
+PLATFORM = tag
 # ESTIMATOR = complementary
 ESTIMATOR = kalman
 POWER_DISTRIBUTION = stock
-# CFLAGS += -DDECK_FORCE=bcBigQuad:bcDWM1000
+CFLAGS += -DDECK_FORCE=bcBigQuad:bcDWM1000
 
-# Enable/Disable the Loco Deck by commenting and uncommenting the following two lines 
+## Enable/Disable the Loco Deck by commenting and uncommenting the following two lines 
 # CFLAGS += -DDISABLE_LOCO_DECK
 # CFLAGS += -DDECK_FORCE=bcDWM1000
 
@@ -33,7 +33,7 @@ POWER_DISTRIBUTION = stock
 
 ## Enable biq quad deck features
 # CFLAGS += -DDECK_FORCE=bcBigQuad
-# CFLAGS += -DENABLE_BQ_DECK
+CFLAGS += -DENABLE_BQ_DECK
 # CFLAGS += -DBQ_DECK_ENABLE_PM
 # CFLAGS += -DBQ_DECK_ENABLE_OSD
 
