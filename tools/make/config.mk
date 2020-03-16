@@ -3,7 +3,7 @@
 PLATFORM = cf2
 # ESTIMATOR = complementary
 ESTIMATOR = kalman
-POWER_DISTRIBUTION = stock
+POWER_DISTRIBUTION = nimble
 # CFLAGS += -DDECK_FORCE=bcBigQuad:bcDWM1000
 
 # Enable/Disable the Loco Deck by commenting and uncommenting the following two lines 

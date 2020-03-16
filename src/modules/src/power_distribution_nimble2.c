@@ -21,7 +21,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
- * power_distribution_stock.c - Crazyflie stock power distribution code
+ * power_distribution_nimble.c - Crazyflie stock power distribution code
  */
 #define DEBUG_MODULE "PWR_DIST"
 
@@ -34,6 +34,7 @@
 #include "platform.h"
 #include "motors.h"
 #include "debug.h"
+#include "math.h"
 
 static bool motorSetEnable = false;
 
@@ -50,12 +51,6 @@ static struct {
   uint16_t m3;
   uint16_t m4;
 } motorPowerSet;
-
-#ifndef DEFAULT_IDLE_THRUST
-#define DEFAULT_IDLE_THRUST 0
-#endif
-
-static uint32_t idleThrust = DEFAULT_IDLE_THRUST;
 
 void powerDistributionInit(void)
 {
@@ -76,31 +71,50 @@ bool powerDistributionTest(void)
 void powerStop()
 {
   motorsSetRatio(MOTOR_M1, 0);
-  motorsSetRatio(MOTOR_M2, 0);
-  motorsSetRatio(MOTOR_M3, 0);
+  motorsSetRatio(MOTOR_M2, 32767);
+  motorsSetRatio(MOTOR_M3, 32767);
   motorsSetRatio(MOTOR_M4, 0);
 }
 
 void powerDistribution(const control_t *control)
 {
-  #ifdef QUAD_FORMATION_X
-    int16_t r = control->roll / 2.0f;
-    int16_t p = control->pitch / 2.0f;
-    motorPower.m1 = limitThrust(control->thrust - r + p + control->yaw);
-    motorPower.m2 = limitThrust(control->thrust - r - p - control->yaw);
-    motorPower.m3 =  limitThrust(control->thrust + r - p + control->yaw);
-    motorPower.m4 =  limitThrust(control->thrust + r + p - control->yaw);
-  #else // QUAD_FORMATION_NORMAL
-    motorPower.m1 = limitThrust(control->thrust + control->pitch +
-                               control->yaw);
-    motorPower.m2 = limitThrust(control->thrust - control->roll -
-                               control->yaw);
-    motorPower.m3 =  limitThrust(control->thrust - control->pitch +
-                               control->yaw);
-    motorPower.m4 =  limitThrust(control->thrust + control->roll -
-                               control->yaw);
-  #endif
+  static float gam_max = 60/180*3.1416;
+  static int16_t roll_trim = 0; //-6000; // 100% = 32767
+  static int16_t pitch_trim = 0; //-10000; // 100% = 32767
+  static int16_t yaw_trim = 0; //3000; // 100% = 32767
+  static int16_t act_max = 32767;
+  
+  static float gam_in, gam, servo_max, yaw_scale;
+  static int32_t croll, cpitch, cyaw;
 
+  croll = control->roll;
+  cpitch = control->pitch ;
+  cyaw = control->yaw;
+
+  // Actuator deflection for the given yaw command
+  gam_in = gam_max*(float)cyaw/act_max;
+
+  // check, if saturation will occur, if so, saturate the yaw command
+  servo_max = fabs(yaw_trim) + fabs(control->yaw) + 0.4*fabs(cos(gam_in)*cpitch) + 0.2*fabs(sin(gam_in)*croll);
+
+  if (servo_max > act_max)
+  {
+    if (gam_in > 0) gam = gam_in - (servo_max - act_max)/act_max*gam_max;
+    else gam = gam_in + (servo_max - act_max)/act_max*gam_max;
+  }
+  else
+  {
+    gam = gam_in;
+  }
+
+  if (gam_in == 0) yaw_scale=1;
+  else yaw_scale = gam/gam_in;
+
+  motorPower.m2 = limitThrust(act_max + 0.2f * croll * sinf(gam) + 0.4f * cpitch * cosf(gam) + yaw_scale*cyaw + yaw_trim + pitch_trim ); // left servo
+  motorPower.m3 = limitThrust(act_max - 0.2f * croll * sinf(gam) - 0.4f * cpitch * cosf(gam) + yaw_scale*cyaw + yaw_trim - pitch_trim ); // right servo
+  motorPower.m4 = limitThrust( 0.5f * croll * cosf(gam) + 0.25f * cpitch * sinf(gam) + control->thrust * (1 + roll_trim / act_max) ); // left motor
+  motorPower.m1 = limitThrust(-0.5f * croll * cosf(gam) - 0.25f * cpitch * sinf(gam) + control->thrust * (1 - roll_trim / act_max) ); // right motor
+  
   if (motorSetEnable)
   {
     motorsSetRatio(MOTOR_M1, motorPowerSet.m1);
@@ -110,19 +124,6 @@ void powerDistribution(const control_t *control)
   }
   else
   {
-    if (motorPower.m1 < idleThrust) {
-      motorPower.m1 = idleThrust;
-    }
-    if (motorPower.m2 < idleThrust) {
-      motorPower.m2 = idleThrust;
-    }
-    if (motorPower.m3 < idleThrust) {
-      motorPower.m3 = idleThrust;
-    }
-    if (motorPower.m4 < idleThrust) {
-      motorPower.m4 = idleThrust;
-    }
-
     motorsSetRatio(MOTOR_M1, motorPower.m1);
     motorsSetRatio(MOTOR_M2, motorPower.m2);
     motorsSetRatio(MOTOR_M3, motorPower.m3);
@@ -137,10 +138,6 @@ PARAM_ADD(PARAM_UINT16, m2, &motorPowerSet.m2)
 PARAM_ADD(PARAM_UINT16, m3, &motorPowerSet.m3)
 PARAM_ADD(PARAM_UINT16, m4, &motorPowerSet.m4)
 PARAM_GROUP_STOP(motorPowerSet)
-
-PARAM_GROUP_START(powerDist)
-PARAM_ADD(PARAM_UINT32, idleThrust, &idleThrust)
-PARAM_GROUP_STOP(powerDist)
 
 LOG_GROUP_START(motor)
 LOG_ADD(LOG_UINT32, m1, &motorPower.m1)
