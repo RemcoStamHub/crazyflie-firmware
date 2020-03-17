@@ -70,25 +70,25 @@ bool powerDistributionTest(void)
 
 void powerStop()
 {
-  motorsSetRatio(MOTOR_M1, 0);
-  motorsSetRatio(MOTOR_M2, 32767);
-  motorsSetRatio(MOTOR_M3, 32767);
-  motorsSetRatio(MOTOR_M4, 0);
+  motorsSetRatio(MOTOR_M1, 32767);
+  motorsSetRatio(MOTOR_M2, 0);
+  motorsSetRatio(MOTOR_M3, 0);
+  motorsSetRatio(MOTOR_M4, 32767);
 }
 
 void powerDistribution(const control_t *control)
 {
   static float pitch_ampl = 0.4; // 1 = full servo stroke
-  static int16_t roll_trim = 0; // 100% = 32767
-  static int16_t pitch_trim = 0; // 100% = 32767
-  static int16_t yaw_trim = 0; // 100% = 32767
+  static float roll_trim = 0;
+  static float pitch_trim = -0.1;
+  static float yaw_trim = 0;
   static int16_t act_max = 32767;
   
-  motorPower.m2 = limitThrust(act_max + pitch_ampl*control->pitch + pitch_trim); // pitch servo
-  motorPower.m3 = limitThrust(act_max + control->yaw + yaw_trim); // yaw servo
+  motorPower.m4 = limitThrust(act_max * (1 + pitch_trim) - pitch_ampl*control->pitch); // pitch servo
+  motorPower.m1 = limitThrust(act_max * (1 + yaw_trim) - control->yaw); // yaw servo
   
-  motorPower.m4 = limitThrust( 0.5f * control->roll + control->thrust * (1 + roll_trim / act_max) ); // left motor
-  motorPower.m1 = limitThrust(-0.5f * control->roll + control->thrust * (1 - roll_trim / act_max) ); // right motor
+  motorPower.m2 = limitThrust( 0.5f * control->roll + control->thrust * (1 + roll_trim) ); // left motor
+  motorPower.m3 = limitThrust(-0.5f * control->roll + control->thrust * (1 - roll_trim) ); // right motor
   
   if (motorSetEnable)
   {
