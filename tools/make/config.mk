@@ -1,14 +1,34 @@
 ## Copy this file to config.mk and modify to get you personal build configuration
 
+## Setup for Bolt
 PLATFORM = cf2
-# ESTIMATOR = complementary
-ESTIMATOR = kalman
+ESTIMATOR = complementary
+# ESTIMATOR = kalman
 POWER_DISTRIBUTION = nimble
-# CFLAGS += -DDECK_FORCE=bcBigQuad:bcDWM1000
+# CFLAGS += -DUSDDECK_USE_ALT_PINS_AND_SPI # enables SD card on alternate pins
+# CFLAGS += -DLOCODECK_USE_ALT_PINS # use alternate pins for PATCHED Loco Deck (to enable simultaneous SD card logging)
+# CFLAGS += -DDECK_FORCE=bcUSD:bcLedRing # force the SD card deck & LED Ring deck
 
-# Enable/Disable the Loco Deck by commenting and uncommenting the following two lines 
+# CFLAGS += -DTURN_OFF_LEDS
+# CFLAGS += -DLEDRING_DEFAULT_EFFECT=0
+CFLAGS += -DLED_RING_NBR_LEDS=9
+CFLAGS += -DDECK_FORCE=bcLedRing
+
+## Setup for Roadrunner
+# PLATFORM = tag
+# ESTIMATOR = complementary
+# ESTIMATOR = kalman
+# POWER_DISTRIBUTION = nimble2
+#
+# CFLAGS += -DDECK_FORCE=bcBigQuad:bcDWM1000
+# Enable/Disable the Loco Deck part by commenting and uncommenting the following two lines 
 # CFLAGS += -DDISABLE_LOCO_DECK
 # CFLAGS += -DDECK_FORCE=bcDWM1000
+#
+# CFLAGS += -DENABLE_BQ_DECK
+# CFLAGS += -DBQ_DECK_ENABLE_PM
+# CFLAGS += -DBQ_DECK_ENABLE_OSD
+
 
 ## Force device type string
 # CFLAGS += -DDEVICE_TYPE_STRING_FORCE="CF20"
