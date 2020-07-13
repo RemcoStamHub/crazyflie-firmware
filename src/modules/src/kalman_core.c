@@ -1025,6 +1025,10 @@ void kalmanCoreFinalize(kalmanCoreData_t* this, uint32_t tick)
 float compl_roll = 0.0f;
 float compl_pitch = 0.0f;
 float compl_yaw = 0.0f;
+
+float roll = 0.0f;
+float pitch = 0.0f;
+float yaw = 0.0f;
     
 
 void kalmanCoreExternalizeState(const kalmanCoreData_t* this, state_t *state, const Axis3f *acc, const Axis3f *gyro, uint32_t tick)
@@ -1056,9 +1060,9 @@ void kalmanCoreExternalizeState(const kalmanCoreData_t* this, state_t *state, co
   };
 
   // convert the new attitude into Euler YPR
-  float yaw = atan2f(2*(this->q[1]*this->q[2]+this->q[0]*this->q[3]) , this->q[0]*this->q[0] + this->q[1]*this->q[1] - this->q[2]*this->q[2] - this->q[3]*this->q[3]);
-  // float pitch = asinf(-2*(this->q[1]*this->q[3] - this->q[0]*this->q[2]));
-  // float roll = atan2f(2*(this->q[2]*this->q[3]+this->q[0]*this->q[1]) , this->q[0]*this->q[0] - this->q[1]*this->q[1] - this->q[2]*this->q[2] + this->q[3]*this->q[3]);
+  yaw = atan2f(2*(this->q[1]*this->q[2]+this->q[0]*this->q[3]) , this->q[0]*this->q[0] + this->q[1]*this->q[1] - this->q[2]*this->q[2] - this->q[3]*this->q[3]);
+  pitch = asinf(-2*(this->q[1]*this->q[3] - this->q[0]*this->q[2]));
+  roll = atan2f(2*(this->q[2]*this->q[3]+this->q[0]*this->q[1]) , this->q[0]*this->q[0] - this->q[1]*this->q[1] - this->q[2]*this->q[2] + this->q[3]*this->q[3]);
 
   // // Save attitude, adjusted for the legacy CF2 body coordinate system
   // state->attitude = (attitude_t){
