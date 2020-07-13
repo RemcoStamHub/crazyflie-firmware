@@ -2,8 +2,8 @@
 
 ## Setup for Bolt
 PLATFORM = cf2
-# ESTIMATOR = complementary
-ESTIMATOR = kalman
+ESTIMATOR = complementary
+# ESTIMATOR = kalman
 POWER_DISTRIBUTION = nimble
 CFLAGS += -DUSDDECK_USE_ALT_PINS_AND_SPI # enables SD card on alternate pins
 CFLAGS += -DLOCODECK_USE_ALT_PINS # use alternate pins for PATCHED Loco Deck (to enable simultaneous SD card logging)

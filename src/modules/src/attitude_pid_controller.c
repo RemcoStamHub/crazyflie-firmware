@@ -34,10 +34,10 @@
 #include "commander.h"
 
 #define ATTITUDE_LPF_CUTOFF_FREQ      15.0f
-#define ATTITUDE_LPF_ENABLE false
+#define ATTITUDE_LPF_ENABLE true
 #define ATTITUDE_RATE_LPF_CUTOFF_FREQ 15.0f
 #define ATTITUDE_RATE_LPF_ENABLE true
-#define ATTITUDE_RATE_FF_YAW 600.0f
+#define ATTITUDE_RATE_FF_YAW 220.0f
 
 static inline int16_t saturateSignedInt16(float in)
 {
