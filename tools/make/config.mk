@@ -1,5 +1,5 @@
 ## Copy this file to config.mk and modify to get you personal build configuration
-
+###################################################
 # ## Setup for Bolt
 # PLATFORM = cf2
 # # ESTIMATOR = complementary
@@ -14,22 +14,26 @@
 # CFLAGS += -DLED_RING_NBR_LEDS=9
 # CFLAGS += -DDECK_FORCE=bcLedRing
 
+#################################################
 ## Setup for Roadrunner
 PLATFORM = tag
-ESTIMATOR = complementary
-# ESTIMATOR = kalman
 POWER_DISTRIBUTION = nimble_roadrunner
-#
-# CFLAGS += -DDECK_FORCE=bcBigQuad:bcDWM1000
-# Enable/Disable the Loco Deck part by commenting and uncommenting the following two lines 
+
+# Disable UWB 
+ESTIMATOR = complementary
 CFLAGS += -DDISABLE_LOCO_DECK
 CFLAGS += -DDECK_FORCE=bcBigQuad
-# CFLAGS += -DDECK_FORCE=bcDWM1000
-#
+
+# Enable UWB
+# ESTIMATOR = kalman
+# CFLAGS += -DDECK_FORCE=bcBigQuad:bcDWM1000
+
 CFLAGS += -DENABLE_BQ_DECK
+
+###############################################
+
 # CFLAGS += -DBQ_DECK_ENABLE_PM
 # CFLAGS += -DBQ_DECK_ENABLE_OSD
-
 
 ## Force device type string
 # CFLAGS += -DDEVICE_TYPE_STRING_FORCE="CF20"
