@@ -76,7 +76,7 @@ float bank_roll = 0.0f;
 float bank_pitch = 0.0f;
 
 #define DT (float)(1.0f/POSITION_RATE)
-#define POSITION_LPF_CUTOFF_FREQ 20.0f
+#define POSITION_LPF_CUTOFF_FREQ 5.0f
 #define POSITION_LPF_ENABLE true
 
 #ifndef UNIT_TEST
@@ -226,6 +226,8 @@ void positionController(float* thrust, attitude_t *attitude, setpoint_t *setpoin
   if (*thrust < this.thrustMin) {
     *thrust = this.thrustMin;
   }
+  // saturate
+  *thrust = constrain(*thrust, 0, UINT16_MAX);
 }
 
 void velocityController(float* thrust, attitude_t *attitude, setpoint_t *setpoint,
