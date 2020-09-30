@@ -34,7 +34,7 @@
 #include "commander.h"
 
 #define ATTITUDE_LPF_CUTOFF_FREQ      15.0f
-#define ATTITUDE_LPF_ENABLE true
+#define ATTITUDE_LPF_ENABLE false
 #define ATTITUDE_RATE_LPF_CUTOFF_FREQ 15.0f
 #define ATTITUDE_RATE_LPF_ENABLE true
 #define ATTITUDE_RATE_FF_YAW 220.0f
@@ -140,12 +140,7 @@ void attitudeControllerCorrectAttitudePID(
     yawError += 360.0f;
   pidSetError(&pidYaw, yawError);
   
-  // there is probably a more elegant way to get the yaw rate setpoint...
-  static setpoint_t setpoint;
-  static state_t state;
-  commanderGetSetpoint(&setpoint, &state);
-
-  *yawRateDesired = pidUpdate(&pidYaw, eulerYawActual, false);// + setpoint.attitudeRate.yaw; // not sure why I introduced the rate term before, doesn't seem to do anything
+  *yawRateDesired = pidUpdate(&pidYaw, eulerYawActual, false);
 }
 
 void attitudeControllerResetRollAttitudePID(void)
