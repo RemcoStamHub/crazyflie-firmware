@@ -64,20 +64,30 @@ struct this_s {
 };
 
 // Maximum roll/pitch angle permited
-static float rpLimit  = 30;
+static float rpLimit  = 30; // global control
+static float rLimit  = 30; // in-body control
+static float pLimit  = 30;
 static float rpLimitOverhead = 1.10f;
 // Velocity maximums
-static float xyVelMax = 1.0f;
+static float xyVelMax = 1.0f; // global control
+static float xBodyVelMax = 1.0f; // in-body control
+static float yBodyVelMax = 1.0f;
 static float zVelMax  = 1.0f;
-// static float velMaxOverhead = 1.10f;
+static float velMaxOverhead = 1.10f;
+
 static const float thrustScale = 1000.0f;
 
-float bank_roll = 0.0f;
+float bank_roll = 0.0f; // for logging & debugging
 float bank_pitch = 0.0f;
 
 #define DT (float)(1.0f/POSITION_RATE)
 #define POSITION_LPF_CUTOFF_FREQ 5.0f
-#define POSITION_LPF_ENABLE true
+#define POSITION_LPF_ENABLE false
+#define VELOCITY_LPF_CUTOFF_FREQ 5.0f
+#define VELOCITY_LPF_ENABLE true
+
+#define POSITION_CONTROL_IN_BODY true
+#define POSITION_CONTROL_SINGLE_LOOP false
 
 #ifndef UNIT_TEST
 static struct this_s this = {
@@ -150,11 +160,11 @@ void positionControllerInit()
       this.pidZ.pid.dt, POSITION_RATE, POSITION_LPF_CUTOFF_FREQ, POSITION_LPF_ENABLE);
 
   pidInit(&this.pidVX.pid, this.pidVX.setpoint, this.pidVX.init.kp, this.pidVX.init.ki, this.pidVX.init.kd,
-      this.pidVX.pid.dt, POSITION_RATE, POSITION_LPF_CUTOFF_FREQ, POSITION_LPF_ENABLE);
+      this.pidVX.pid.dt, POSITION_RATE, VELOCITY_LPF_CUTOFF_FREQ, VELOCITY_LPF_ENABLE);
   pidInit(&this.pidVY.pid, this.pidVY.setpoint, this.pidVY.init.kp, this.pidVY.init.ki, this.pidVY.init.kd,
-      this.pidVY.pid.dt, POSITION_RATE, POSITION_LPF_CUTOFF_FREQ, POSITION_LPF_ENABLE);
+      this.pidVY.pid.dt, POSITION_RATE, VELOCITY_LPF_CUTOFF_FREQ, VELOCITY_LPF_ENABLE);
   pidInit(&this.pidVZ.pid, this.pidVZ.setpoint, this.pidVZ.init.kp, this.pidVZ.init.ki, this.pidVZ.init.kd,
-      this.pidVZ.pid.dt, POSITION_RATE, POSITION_LPF_CUTOFF_FREQ, POSITION_LPF_ENABLE);
+      this.pidVZ.pid.dt, POSITION_RATE, VELOCITY_LPF_CUTOFF_FREQ, VELOCITY_LPF_ENABLE);
 }
 
 static float runPid(float input, struct pidAxis_s *axis, float setpoint, float dt) {
@@ -164,41 +174,14 @@ static float runPid(float input, struct pidAxis_s *axis, float setpoint, float d
   return pidUpdate(&axis->pid, input, true);
 }
 
-void positionController(float* thrust, attitude_t *attitude, setpoint_t *setpoint,
+void positionControllerInBodySingleLoop(float* thrust, attitude_t *attitude, setpoint_t *setpoint,
                                                              const state_t *state)
 {
-  // this.pidX.pid.outputLimit = xyVelMax * velMaxOverhead;
-  // this.pidY.pid.outputLimit = xyVelMax * velMaxOverhead;
-  // // The ROS landing detector will prematurely trip if
-  // // this value is below 0.5
-  // this.pidZ.pid.outputLimit = fmaxf(zVelMax, 0.5f)  * velMaxOverhead;
-
   float cosyaw = cosf(state->attitude.yaw * (float)M_PI / 180.0f);
   float sinyaw = sinf(state->attitude.yaw * (float)M_PI / 180.0f);
   
-  // float bodyvx = setpoint->velocity.x;
-  // float bodyvy = setpoint->velocity.y;
-
-  // X, Y
-  // if (setpoint->mode.x == modeAbs) {
-  //   setpoint->velocity.x = runPid(state->position.x, &this.pidX, setpoint->position.x, DT);
-  // } else if (setpoint->velocity_body) {
-  //   setpoint->velocity.x = bodyvx * cosyaw - bodyvy * sinyaw;
-  // }
-  // if (setpoint->mode.y == modeAbs) {
-  //   setpoint->velocity.y = runPid(state->position.y, &this.pidY, setpoint->position.y, DT);
-  // } else if (setpoint->velocity_body) {
-  //   setpoint->velocity.y = bodyvy * cosyaw + bodyvx * sinyaw;
-  // }
-  // if (setpoint->mode.z == modeAbs) {
-  //   setpoint->velocity.z = runPid(state->position.z, &this.pidZ, setpoint->position.z, DT);
-  // }
-
-  // velocityController(thrust, attitude, setpoint, state);
-
-
-  this.pidX.pid.outputLimit = rpLimit * rpLimitOverhead;
-  this.pidY.pid.outputLimit = rpLimit * rpLimitOverhead;
+  this.pidX.pid.outputLimit = pLimit * rpLimitOverhead;
+  this.pidY.pid.outputLimit = rLimit * rpLimitOverhead;
   this.pidZ.pid.outputLimit = (UINT16_MAX / 2 / thrustScale);
 
   float setp_body_x = setpoint->position.x * cosyaw + setpoint->position.y * sinyaw;
@@ -207,19 +190,16 @@ void positionController(float* thrust, attitude_t *attitude, setpoint_t *setpoin
   float state_body_x = state->position.x * cosyaw + state->position.y * sinyaw;
   float state_body_y = -state->position.x * sinyaw + state->position.y * cosyaw;
   
-  float pitchRaw = -runPid(state_body_x, &this.pidX, setp_body_x, DT);
-  float rollRaw = -runPid(state_body_y, &this.pidY, setp_body_y, DT);
+  attitude->pitch = -runPid(state_body_x, &this.pidX, setp_body_x, DT);
+  attitude->roll = -runPid(state_body_y, &this.pidY, setp_body_y, DT);
   float thrustRaw = runPid(state->position.z, &this.pidZ, setpoint->position.z, DT);
 
-  attitude->roll  = constrain(rollRaw,  -rpLimit, rpLimit);
-  attitude->pitch = constrain(pitchRaw, -rpLimit, rpLimit);
+  attitude->roll  = constrain(attitude->roll,  -rLimit, rLimit);
+  attitude->pitch = constrain(attitude->pitch, -pLimit, pLimit);
 
-  bank_roll = attitude->roll;
+  bank_roll = attitude->roll; // for logging & debugging only
   bank_pitch = attitude->pitch;
   
-  // attitude->roll = 0;
-  // attitude->pitch = 0;
-
   // Scale the thrust and add feed forward term
   *thrust = thrustRaw*thrustScale + this.thrustBase;
   // Check for minimum thrust
@@ -228,6 +208,78 @@ void positionController(float* thrust, attitude_t *attitude, setpoint_t *setpoin
   }
   // saturate
   *thrust = constrain(*thrust, 0, UINT16_MAX);
+}
+
+void positionControllerInBody(float* thrust, attitude_t *attitude, setpoint_t *setpoint,
+                                                             const state_t *state)
+{
+  this.pidX.pid.outputLimit = xBodyVelMax * velMaxOverhead;
+  this.pidY.pid.outputLimit = yBodyVelMax * velMaxOverhead;
+  this.pidZ.pid.outputLimit = zVelMax * velMaxOverhead;
+  // // The ROS landing detector will prematurely trip if
+  // // this value is below 0.5
+  // this.pidZ.pid.outputLimit = fmaxf(zVelMax, 0.5f)  * velMaxOverhead;
+  
+  float cosyaw = cosf(state->attitude.yaw * (float)M_PI / 180.0f);
+  float sinyaw = sinf(state->attitude.yaw * (float)M_PI / 180.0f);
+
+  float setp_body_x = setpoint->position.x * cosyaw + setpoint->position.y * sinyaw;
+  float setp_body_y = -setpoint->position.x * sinyaw + setpoint->position.y * cosyaw;
+
+  float state_body_x = state->position.x * cosyaw + state->position.y * sinyaw;
+  float state_body_y = -state->position.x * sinyaw + state->position.y * cosyaw;
+    
+  float globalvx = setpoint->velocity.x;
+  float globalvy = setpoint->velocity.y;
+
+  //X, Y
+  if (setpoint->mode.x == modeAbs) {
+    setpoint->velocity.x = runPid(state_body_x, &this.pidX, setp_body_x, DT);
+  } else if (!setpoint->velocity_body) {
+    setpoint->velocity.x = globalvx * cosyaw + globalvy * sinyaw;
+  }
+  if (setpoint->mode.y == modeAbs) {
+    setpoint->velocity.y = runPid(state_body_y, &this.pidY, setp_body_y, DT);
+  } else if (setpoint->velocity_body) {
+    setpoint->velocity.y = globalvy * cosyaw - globalvx * sinyaw;
+  }
+  if (setpoint->mode.z == modeAbs) {
+    setpoint->velocity.z = runPid(state->position.z, &this.pidZ, setpoint->position.z, DT);
+  }
+
+  velocityControllerInBody(thrust, attitude, setpoint, state);
+}
+
+void positionControllerInGlobal(float* thrust, attitude_t *attitude, setpoint_t *setpoint,
+                                                             const state_t *state)
+{
+  this.pidX.pid.outputLimit = xyVelMax * velMaxOverhead;
+  this.pidY.pid.outputLimit = xyVelMax * velMaxOverhead;
+  // The ROS landing detector will prematurely trip if
+  // this value is below 0.5
+  this.pidZ.pid.outputLimit = fmaxf(zVelMax, 0.5f)  * velMaxOverhead;
+
+  float cosyaw = cosf(state->attitude.yaw * (float)M_PI / 180.0f);
+  float sinyaw = sinf(state->attitude.yaw * (float)M_PI / 180.0f);
+  float bodyvx = setpoint->velocity.x;
+  float bodyvy = setpoint->velocity.y;
+
+  // X, Y
+  if (setpoint->mode.x == modeAbs) {
+    setpoint->velocity.x = runPid(state->position.x, &this.pidX, setpoint->position.x, DT);
+  } else if (setpoint->velocity_body) {
+    setpoint->velocity.x = bodyvx * cosyaw - bodyvy * sinyaw;
+  }
+  if (setpoint->mode.y == modeAbs) {
+    setpoint->velocity.y = runPid(state->position.y, &this.pidY, setpoint->position.y, DT);
+  } else if (setpoint->velocity_body) {
+    setpoint->velocity.y = bodyvy * cosyaw + bodyvx * sinyaw;
+  }
+  if (setpoint->mode.z == modeAbs) {
+    setpoint->velocity.z = runPid(state->position.z, &this.pidZ, setpoint->position.z, DT);
+  }
+
+  velocityController(thrust, attitude, setpoint, state);
 }
 
 void velocityController(float* thrust, attitude_t *attitude, setpoint_t *setpoint,
@@ -243,12 +295,12 @@ void velocityController(float* thrust, attitude_t *attitude, setpoint_t *setpoin
   float rollRaw  = runPid(state->velocity.x, &this.pidVX, setpoint->velocity.x, DT);
   float pitchRaw = runPid(state->velocity.y, &this.pidVY, setpoint->velocity.y, DT);
 
-  // float yawRad = state->attitude.yaw * (float)M_PI / 180;
-  // attitude->pitch = -(rollRaw  * cosf(yawRad)) - (pitchRaw * sinf(yawRad));
-  // attitude->roll  = -(pitchRaw * cosf(yawRad)) + (rollRaw  * sinf(yawRad));
+  float yawRad = state->attitude.yaw * (float)M_PI / 180;
+  attitude->pitch = -(rollRaw  * cosf(yawRad)) - (pitchRaw * sinf(yawRad));
+  attitude->roll  = -(pitchRaw * cosf(yawRad)) + (rollRaw  * sinf(yawRad));
 
-  attitude->roll  = constrain(rollRaw,  -rpLimit, rpLimit);
-  attitude->pitch = constrain(pitchRaw, -rpLimit, rpLimit);
+  attitude->roll  = constrain(attitude->roll,  -rpLimit, rpLimit);
+  attitude->pitch = constrain(attitude->pitch, -rpLimit, rpLimit);
 
   // Thrust
   float thrustRaw = runPid(state->velocity.z, &this.pidVZ, setpoint->velocity.z, DT);
@@ -258,6 +310,44 @@ void velocityController(float* thrust, attitude_t *attitude, setpoint_t *setpoin
   if (*thrust < this.thrustMin) {
     *thrust = this.thrustMin;
   }
+}
+
+void velocityControllerInBody(float* thrust, attitude_t *attitude, setpoint_t *setpoint,
+                                                             const state_t *state)
+{
+  this.pidVX.pid.outputLimit = pLimit * rpLimitOverhead;
+  this.pidVY.pid.outputLimit = rLimit * rpLimitOverhead;
+  // Set the output limit to the maximum thrust range
+  this.pidVZ.pid.outputLimit = (UINT16_MAX / 2 / thrustScale);
+  //this.pidVZ.pid.outputLimit = (this.thrustBase - this.thrustMin) / thrustScale;
+
+  // Roll and Pitch
+  attitude->pitch = -runPid(state->velocity.x, &this.pidVX, setpoint->velocity.x, DT);
+  attitude->roll = -runPid(state->velocity.y, &this.pidVY, setpoint->velocity.y, DT);
+
+  attitude->roll  = constrain(attitude->roll,  -rLimit, rLimit);
+  attitude->pitch = constrain(attitude->pitch, -pLimit, pLimit);
+
+  // Thrust
+  float thrustRaw = runPid(state->velocity.z, &this.pidVZ, setpoint->velocity.z, DT);
+  // Scale the thrust and add feed forward term
+  *thrust = thrustRaw*thrustScale + this.thrustBase;
+  // Check for minimum thrust
+  if (*thrust < this.thrustMin) {
+    *thrust = this.thrustMin;
+  }
+    // saturate
+  *thrust = constrain(*thrust, 0, UINT16_MAX);
+}
+
+void positionController(float* thrust, attitude_t *attitude, setpoint_t *setpoint,
+                                                             const state_t *state)
+{
+  if (POSITION_CONTROL_IN_BODY){
+    if (POSITION_CONTROL_SINGLE_LOOP) positionControllerInBodySingleLoop(thrust, attitude, setpoint, state);
+    else positionControllerInBody(thrust, attitude, setpoint, state);
+  }
+  else positionControllerInGlobal(thrust, attitude, setpoint, state);
 }
 
 void positionControllerResetAllPID()
@@ -339,7 +429,11 @@ PARAM_ADD(PARAM_UINT16, thrustBase, &this.thrustBase)
 PARAM_ADD(PARAM_UINT16, thrustMin, &this.thrustMin)
 
 PARAM_ADD(PARAM_FLOAT, rpLimit,  &rpLimit)
+PARAM_ADD(PARAM_FLOAT, rLimit,  &rLimit)
+PARAM_ADD(PARAM_FLOAT, pLimit,  &pLimit)
 PARAM_ADD(PARAM_FLOAT, xyVelMax, &xyVelMax)
 PARAM_ADD(PARAM_FLOAT, zVelMax,  &zVelMax)
+PARAM_ADD(PARAM_FLOAT, xBodyVelMax, &xBodyVelMax)
+PARAM_ADD(PARAM_FLOAT, yBodyVelMax, &yBodyVelMax)
 
 PARAM_GROUP_STOP(posCtlPid)
