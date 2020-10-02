@@ -96,6 +96,7 @@ static void extRxTask(void *param)
 
   //Wait for the system to be fully started
   systemWaitStart();
+  DEBUG_PRINT("CPPM Task Started\n");
 
   while (true)
   {
@@ -118,10 +119,13 @@ static void extRxDecodeCppm(void)
   uint16_t ppm;
   static uint8_t currChannel = 0;
 
+  DEBUG_PRINT("CPPM Decode Running\n");
+
   if (cppmGetTimestamp(&ppm) == pdTRUE)
   {
     if (cppmIsAvailible() && ppm < 2100)
     {
+      DEBUG_PRINT("CPPM cppm available\n");
       if (currChannel < EXTRX_NR_CHANNELS)
       {
         ch[currChannel] = ppm;
@@ -130,6 +134,7 @@ static void extRxDecodeCppm(void)
     }
     else
     {
+      DEBUG_PRINT("CPPM Decode Cahnnels\n");
       extRxDecodeChannels();
       currChannel = 0;
     }

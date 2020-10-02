@@ -21,16 +21,16 @@
 PLATFORM = tag
 POWER_DISTRIBUTION = nimble_roadrunner
 
-# # Disable UWB 
-# ESTIMATOR = complementary
-# CFLAGS += -DDISABLE_LOCO_DECK
-# CFLAGS += -DDECK_FORCE=bcBigQuad
-# CFLAGS += -DENABLE_BQ_DECK
-
-# Enable UWB
-ESTIMATOR = kalman
-CFLAGS += -DDECK_FORCE=bcBigQuad:bcDWM1000
+# Disable UWB 
+ESTIMATOR = complementary
+CFLAGS += -DDISABLE_LOCO_DECK
+CFLAGS += -DDECK_FORCE=bcBigQuad
 CFLAGS += -DENABLE_BQ_DECK
+
+# # Enable UWB
+# ESTIMATOR = kalman
+# CFLAGS += -DDECK_FORCE=bcBigQuad:bcDWM1000
+# CFLAGS += -DENABLE_BQ_DECK
 
 ###############################################
 
