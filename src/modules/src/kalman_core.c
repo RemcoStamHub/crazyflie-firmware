@@ -1100,8 +1100,8 @@ void kalmanCoreExternalizeState(const kalmanCoreData_t* this, state_t *state, co
   }
   state->attitude.roll=compl_roll;
   state->attitude.pitch=compl_pitch;
-  // state->attitude.yaw=compl_yaw;
-  state->attitude.yaw=yaw*RAD_TO_DEG;
+  state->attitude.yaw=compl_yaw;
+  //state->attitude.yaw=yaw*RAD_TO_DEG;
 
   assertStateNotNaN(this);
 }
