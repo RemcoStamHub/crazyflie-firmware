@@ -50,6 +50,7 @@ bool deckTest(void);
 #define DECK_USING_TIMER3  (1<<3)
 #define DECK_USING_TIMER5  (1<<4)
 #define DECK_USING_TIMER14 (1<<5)
+#define DECK_USING_TIMER10 (1<<6)
 
 /* Used GPIO */
 #define DECK_USING_PC11 (1<<0)

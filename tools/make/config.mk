@@ -9,10 +9,9 @@ POWER_DISTRIBUTION = nimble
 
 # CFLAGS += -DUSDDECK_USE_ALT_PINS_AND_SPI # enables SD card on alternate pins
 # CFLAGS += -DLOCODECK_USE_ALT_PINS # use alternate pins for PATCHED Loco Deck (to enable simultaneous SD card logging)
-# CFLAGS += -DDECK_FORCE=bcUSD # force the SD card deck
-CFLAGS += -DDECK_FORCE=bcBigQuad:bcUSD # force the SD card deck & BigQuad deck
-# CFLAGS += -DDECK_FORCE=bcBigQuad
-CFLAGS += -DENABLE_BQ_DECK
+CFLAGS += -DDECK_FORCE=bcUSD # force the SD card deck
+# CFLAGS += -DDECK_FORCE=bcCPPM # force the CCPM deck
+# CFLAGS += -DDECK_FORCE=bcUSD:bcCPPM # force the SD card deck and the CPPM deck
 
 # CFLAGS += -DTURN_OFF_LED
 # CFLAGS += -DLEDRING_DEFAULT_EFFECT=1
@@ -36,25 +35,25 @@ CFLAGS += -DENABLE_BQ_DECK
 # CFLAGS += -DDECK_FORCE=bcBigQuad:bcDWM1000:bcUSD
 # CFLAGS += -DENABLE_BQ_DECK
 
-# CFLAGS += -DTURN_OFF_LED
-# CFLAGS += -DLEDRING_DEFAULT_EFFECT=1
-# CFLAGS += -DLED_RING_NBR_LEDS=9
-# CFLAGS += -DDECK_FORCE=bcLedRing
+# # CFLAGS += -DTURN_OFF_LED
+# # CFLAGS += -DLEDRING_DEFAULT_EFFECT=1
+# # CFLAGS += -DLED_RING_NBR_LEDS=9
+# # CFLAGS += -DDECK_FORCE=bcLedRing
 
 ###############################################
 
-## Setup for CF2 (for debugging only)
-PLATFORM = cf2
-# ESTIMATOR = complementary
-ESTIMATOR = kalman
-POWER_DISTRIBUTION = stock
+# ## Setup for CF2 (for debugging only)
+# PLATFORM = cf2
+# # ESTIMATOR = complementary
+# ESTIMATOR = kalman
+# POWER_DISTRIBUTION = stock
 
-# CFLAGS += -DUSDDECK_USE_ALT_PINS_AND_SPI # enables SD card on alternate pins
-# CFLAGS += -DLOCODECK_USE_ALT_PINS # use alternate pins for PATCHED Loco Deck (to enable simultaneous SD card logging)
-# CFLAGS += -DDECK_FORCE=bcUSD # force the SD card deck
-CFLAGS += -DDECK_FORCE=bcBigQuad:bcUSD # force the SD card deck & BigQuad deck
+# # CFLAGS += -DUSDDECK_USE_ALT_PINS_AND_SPI # enables SD card on alternate pins
+# # CFLAGS += -DLOCODECK_USE_ALT_PINS # use alternate pins for PATCHED Loco Deck (to enable simultaneous SD card logging)
+# # CFLAGS += -DDECK_FORCE=bcUSD # force the SD card deck
+# # CFLAGS += -DDECK_FORCE=bcBigQuad:bcUSD # force the SD card deck & BigQuad deck
 # CFLAGS += -DDECK_FORCE=bcBigQuad
-CFLAGS += -DENABLE_BQ_DECK
+# CFLAGS += -DENABLE_BQ_DECK
 
 ###############################################
 
