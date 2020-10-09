@@ -35,6 +35,7 @@
 #include "commander.h"
 #include "stabilizer.h"
 #include "motors.h"
+#include "debug.h"
 
 /* Trigger object used to detect Free Fall situation. */
 static trigger_t sitAwFFAccWZ;
@@ -44,6 +45,9 @@ static trigger_t sitAwARAccZ;
 
 /* Trigger object used to detect Tumbled situation. */
 static trigger_t sitAwTuAcc;
+
+/* Trigger object used to detect Crash situation. */
+static trigger_t sitAwCrAcc;
 
 #if defined(SITAW_ENABLED)
 
@@ -61,10 +65,15 @@ LOG_ADD(LOG_UINT8, ARDetected, &sitAwARAccZ.released)
 LOG_ADD(LOG_UINT32, TuTestCounter, &sitAwTuAcc.testCounter)
 LOG_ADD(LOG_UINT8, TuDetected, &sitAwTuAcc.released)
 #endif
+#if defined(SITAW_CR_LOG_ENABLED) /* Log trigger variables for Tumbled detection. */
+LOG_ADD(LOG_UINT32, CrTestCounter, &sitAwCrAcc.testCounter)
+LOG_ADD(LOG_UINT8, CrDetected, &sitAwCrAcc.released)
+#endif
 #if defined(SITAW_LOG_ALL_DETECT_ENABLED) /* Log all the 'Detected' flags. */
 LOG_ADD(LOG_UINT8, FFAccWZDetected, &sitAwFFAccWZ.released)
 LOG_ADD(LOG_UINT8, ARDetected, &sitAwARAccZ.released)
 LOG_ADD(LOG_UINT8, TuDetected, &sitAwTuAcc.released)
+LOG_ADD(LOG_UINT8, CrDetected, &sitAwCrAcc.released)
 #endif
 LOG_GROUP_STOP(sitAw)
 #endif /* SITAW_LOG_ENABLED */
@@ -86,6 +95,11 @@ PARAM_ADD(PARAM_UINT8, TuActive, &sitAwTuAcc.active)
 PARAM_ADD(PARAM_UINT32, TuTriggerCount, &sitAwTuAcc.triggerCount)
 PARAM_ADD(PARAM_FLOAT, TuAcc, &sitAwTuAcc.threshold)
 #endif
+#if defined(SITAW_CR_PARAM_ENABLED) /* Param variables for Crash detection. */
+PARAM_ADD(PARAM_UINT8, CrActive, &sitAwCrAcc.active)
+PARAM_ADD(PARAM_UINT32, CrTriggerCount, &sitAwCrAcc.triggerCount)
+PARAM_ADD(PARAM_FLOAT, CrAcc, &sitAwCrAcc.threshold)
+#endif
 PARAM_GROUP_STOP(sitAw)
 #endif /* SITAW_PARAM_ENABLED */
 
@@ -100,6 +114,9 @@ static void sitAwARTest(float accX, float accY, float accZ);
 #endif
 #ifdef SITAW_TU_ENABLED
 static void sitAwTuTest(float accz);
+#endif
+#ifdef SITAW_CR_ENABLED
+static void sitAwCrTest(float acc);
 #endif
 
 static void sitAwPostStateUpdateCallOut(const sensorData_t *sensorData,
@@ -122,10 +139,22 @@ static void sitAwPostStateUpdateCallOut(const sensorData_t *sensorData,
   for (int i = 0; i < NBR_OF_MOTORS; ++i) {
     sumRatio += motorsGetRatio(i);
   }
-  bool isFlying = sumRatio > SITAW_TU_IN_FLIGHT_THRESHOLD;
-  if (isFlying) {
+  bool isFlyingTu = sumRatio > SITAW_TU_IN_FLIGHT_THRESHOLD;
+  if (isFlyingTu) {
     /* Test values for Tumbled detection. */
     sitAwTuTest(-sensorData->acc.x);
+  }
+#endif
+#ifdef SITAW_CR_ENABLED
+  /* check if we actually fly */
+  int sumRatioCr = 0;
+  for (int i = 0; i < NBR_OF_MOTORS; ++i) {
+    sumRatioCr += motorsGetRatio(i);
+  }
+  bool isFlyingCr = sumRatioCr > SITAW_CR_IN_FLIGHT_THRESHOLD;
+  if (isFlyingCr) {
+    /* Test values for Crash detection. */
+    sitAwCrTest(sqrtf(sensorData->acc.x*sensorData->acc.x + sensorData->acc.y*sensorData->acc.y + sensorData->acc.z*sensorData->acc.z));
   }
 #endif
 #ifdef SITAW_AR_ENABLED
@@ -143,6 +172,13 @@ static void sitAwPreThrustUpdateCallOut(setpoint_t *setpoint)
 #ifdef SITAW_TU_ENABLED
       if(sitAwTuDetected()) {
         /* Kill the thrust to the motors if a Tumbled situation is detected. */
+        stabilizerSetEmergencyStop();
+      }
+#endif
+
+#ifdef SITAW_TU_ENABLED
+      if(sitAwCrDetected()) {
+        /* Kill the thrust to the motors if a Crash situation is detected. */
         stabilizerSetEmergencyStop();
       }
 #endif
@@ -330,6 +366,47 @@ bool sitAwTuDetected(void)
 }
 #endif
 
+
+#ifdef SITAW_CR_ENABLED
+/**
+ * Initialize the Crash detection.
+ *
+ * See the sitAwCrTest() function for details.
+ */
+void sitAwCrInit(void)
+{
+  triggerInit(&sitAwCrAcc, triggerFuncIsGE, SITAW_CR_ACC_THRESHOLD, SITAW_CR_ACC_TRIGGER_COUNT);
+  triggerActivate(&sitAwCrAcc, true);
+}
+
+/**
+ * Test values for a Crash situation.
+ *
+ * A crash situation is considered identified when a too high acceleration is reported.
+ *
+ * Once a tumbled situation is identified, this can be used for instance to
+ * cut the thrust to the motors, avoiding the crazyflie from running
+ * propellers at significant thrust when accidentally crashing into walls
+ * or the ground.
+
+ * @param The current acceleration magnitude reading
+ */
+void sitAwCrTest(float acc)
+{
+  triggerTestValue(&sitAwCrAcc, acc);
+}
+
+/**
+ * Check if a Crash situation has been detected.
+ *
+ * @return True if the situation has been detected, otherwise false.
+ */
+bool sitAwCrDetected(void)
+{
+  return sitAwCrAcc.released;
+}
+#endif
+
 /**
  * Initialize the situation awareness subsystem.
  */
@@ -343,5 +420,8 @@ void sitAwInit(void)
 #endif
 #ifdef SITAW_TU_ENABLED
   sitAwTuInit();
+#endif
+#ifdef SITAW_CR_ENABLED
+  sitAwCrInit();
 #endif
 }
