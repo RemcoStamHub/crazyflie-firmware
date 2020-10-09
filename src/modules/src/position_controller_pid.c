@@ -87,7 +87,13 @@ float bank_pitch = 0.0f;
 #define VELOCITY_LPF_ENABLE true
 
 #define POSITION_CONTROL_IN_BODY true
-#define POSITION_CONTROL_SINGLE_LOOP false
+#define POSITION_CONTROL_SINGLE_LOOP true
+
+bool singleLoop = POSITION_CONTROL_SINGLE_LOOP;
+bool posFiltEnable = POSITION_LPF_ENABLE;
+bool velFiltEnable = VELOCITY_LPF_ENABLE;
+float posFiltCutoff = POSITION_LPF_CUTOFF_FREQ;
+float velFiltCutoff = VELOCITY_LPF_CUTOFF_FREQ;
 
 #ifndef UNIT_TEST
 static struct this_s this = {
@@ -153,18 +159,18 @@ static struct this_s this = {
 void positionControllerInit()
 {
   pidInit(&this.pidX.pid, this.pidX.setpoint, this.pidX.init.kp, this.pidX.init.ki, this.pidX.init.kd,
-      this.pidX.pid.dt, POSITION_RATE, POSITION_LPF_CUTOFF_FREQ, POSITION_LPF_ENABLE);
+      this.pidX.pid.dt, POSITION_RATE, posFiltCutoff, posFiltEnable);
   pidInit(&this.pidY.pid, this.pidY.setpoint, this.pidY.init.kp, this.pidY.init.ki, this.pidY.init.kd,
-      this.pidY.pid.dt, POSITION_RATE, POSITION_LPF_CUTOFF_FREQ, POSITION_LPF_ENABLE);
+      this.pidY.pid.dt, POSITION_RATE, posFiltCutoff, posFiltEnable);
   pidInit(&this.pidZ.pid, this.pidZ.setpoint, this.pidZ.init.kp, this.pidZ.init.ki, this.pidZ.init.kd,
-      this.pidZ.pid.dt, POSITION_RATE, POSITION_LPF_CUTOFF_FREQ, POSITION_LPF_ENABLE);
+      this.pidZ.pid.dt, POSITION_RATE, posFiltCutoff, posFiltEnable);
 
   pidInit(&this.pidVX.pid, this.pidVX.setpoint, this.pidVX.init.kp, this.pidVX.init.ki, this.pidVX.init.kd,
-      this.pidVX.pid.dt, POSITION_RATE, VELOCITY_LPF_CUTOFF_FREQ, VELOCITY_LPF_ENABLE);
+      this.pidVX.pid.dt, POSITION_RATE, velFiltCutoff, velFiltEnable);
   pidInit(&this.pidVY.pid, this.pidVY.setpoint, this.pidVY.init.kp, this.pidVY.init.ki, this.pidVY.init.kd,
-      this.pidVY.pid.dt, POSITION_RATE, VELOCITY_LPF_CUTOFF_FREQ, VELOCITY_LPF_ENABLE);
+      this.pidVY.pid.dt, POSITION_RATE, velFiltCutoff, velFiltEnable);
   pidInit(&this.pidVZ.pid, this.pidVZ.setpoint, this.pidVZ.init.kp, this.pidVZ.init.ki, this.pidVZ.init.kd,
-      this.pidVZ.pid.dt, POSITION_RATE, VELOCITY_LPF_CUTOFF_FREQ, VELOCITY_LPF_ENABLE);
+      this.pidVZ.pid.dt, POSITION_RATE, velFiltCutoff, velFiltEnable);
 }
 
 static float runPid(float input, struct pidAxis_s *axis, float setpoint, float dt) {
@@ -344,7 +350,7 @@ void positionController(float* thrust, attitude_t *attitude, setpoint_t *setpoin
                                                              const state_t *state)
 {
   if (POSITION_CONTROL_IN_BODY){
-    if (POSITION_CONTROL_SINGLE_LOOP) positionControllerInBodySingleLoop(thrust, attitude, setpoint, state);
+    if (singleLoop) positionControllerInBodySingleLoop(thrust, attitude, setpoint, state);
     else positionControllerInBody(thrust, attitude, setpoint, state);
   }
   else positionControllerInGlobal(thrust, attitude, setpoint, state);
@@ -436,4 +442,16 @@ PARAM_ADD(PARAM_FLOAT, zVelMax,  &zVelMax)
 PARAM_ADD(PARAM_FLOAT, xBodyVelMax, &xBodyVelMax)
 PARAM_ADD(PARAM_FLOAT, yBodyVelMax, &yBodyVelMax)
 
+PARAM_ADD(PARAM_INT8, singleLoop, &singleLoop)
+
+
 PARAM_GROUP_STOP(posCtlPid)
+
+PARAM_GROUP_START(posVelFilt)
+
+PARAM_ADD(PARAM_INT8, posFiltEn, &posFiltEnable)
+PARAM_ADD(PARAM_FLOAT, posFiltCut, &posFiltCutoff)
+PARAM_ADD(PARAM_INT8, velFiltEn, &velFiltEnable)
+PARAM_ADD(PARAM_FLOAT, velFiltCut, &velFiltCutoff)
+
+PARAM_GROUP_STOP(posVelFilt)
