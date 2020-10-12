@@ -80,6 +80,11 @@ static const float thrustScale = 1000.0f;
 float bank_roll = 0.0f; // for logging & debugging
 float bank_pitch = 0.0f;
 
+float setpointx = 0.0f;
+float setpointy = 0.0f;
+float setpointvx = 0.0f;
+float setpointvy = 0.0f;
+
 #define DT (float)(1.0f/POSITION_RATE)
 #define POSITION_LPF_CUTOFF_FREQ 5.0f
 #define POSITION_LPF_ENABLE false
@@ -87,7 +92,7 @@ float bank_pitch = 0.0f;
 #define VELOCITY_LPF_ENABLE true
 
 #define POSITION_CONTROL_IN_BODY true
-#define POSITION_CONTROL_SINGLE_LOOP true
+#define POSITION_CONTROL_SINGLE_LOOP false
 
 bool singleLoop = POSITION_CONTROL_SINGLE_LOOP;
 bool posFiltEnable = POSITION_LPF_ENABLE;
@@ -354,6 +359,12 @@ void positionController(float* thrust, attitude_t *attitude, setpoint_t *setpoin
     else positionControllerInBody(thrust, attitude, setpoint, state);
   }
   else positionControllerInGlobal(thrust, attitude, setpoint, state);
+
+  setpointx = setpoint->position.x;
+  setpointy = setpoint->position.y;
+  setpointvx = setpoint->velocity.x;
+  setpointvy = setpoint->velocity.y;
+
 }
 
 void positionControllerResetAllPID()
@@ -368,13 +379,19 @@ void positionControllerResetAllPID()
 
 LOG_GROUP_START(posCtl)
 
-LOG_ADD(LOG_FLOAT, targetVX, &this.pidVX.pid.desired)
-LOG_ADD(LOG_FLOAT, targetVY, &this.pidVY.pid.desired)
+// LOG_ADD(LOG_FLOAT, targetVX, &this.pidVX.pid.desired)
+// LOG_ADD(LOG_FLOAT, targetVY, &this.pidVY.pid.desired)
 LOG_ADD(LOG_FLOAT, targetVZ, &this.pidVZ.pid.desired)
 
-LOG_ADD(LOG_FLOAT, targetX, &this.pidX.pid.desired)
-LOG_ADD(LOG_FLOAT, targetY, &this.pidY.pid.desired)
+// LOG_ADD(LOG_FLOAT, targetX, &this.pidX.pid.desired)
+// LOG_ADD(LOG_FLOAT, targetY, &this.pidY.pid.desired)
 LOG_ADD(LOG_FLOAT, targetZ, &this.pidZ.pid.desired)
+
+LOG_ADD(LOG_FLOAT, targetVX, &setpointvx)
+LOG_ADD(LOG_FLOAT, targetVY, &setpointvy)
+
+LOG_ADD(LOG_FLOAT, targetX, &setpointx)
+LOG_ADD(LOG_FLOAT, targetY, &setpointy)
 
 LOG_ADD(LOG_FLOAT, Xp, &this.pidX.pid.outP)
 LOG_ADD(LOG_FLOAT, Xi, &this.pidX.pid.outI)
