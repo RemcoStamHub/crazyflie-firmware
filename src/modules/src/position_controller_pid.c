@@ -88,8 +88,13 @@ float setpointvy = 0.0f;
 #define DT (float)(1.0f/POSITION_RATE)
 #define POSITION_LPF_CUTOFF_FREQ 5.0f
 #define POSITION_LPF_ENABLE false
-#define VELOCITY_LPF_CUTOFF_FREQ 5.0f
+#define VELOCITY_LPF_CUTOFF_FREQ 10.0f
 #define VELOCITY_LPF_ENABLE true
+
+#define ZPOSITION_LPF_CUTOFF_FREQ 5.0f
+#define ZPOSITION_LPF_ENABLE false
+#define ZVELOCITY_LPF_CUTOFF_FREQ 10.0f
+#define ZVELOCITY_LPF_ENABLE true
 
 #define POSITION_CONTROL_IN_BODY true
 #define POSITION_CONTROL_SINGLE_LOOP false
@@ -99,6 +104,10 @@ bool posFiltEnable = POSITION_LPF_ENABLE;
 bool velFiltEnable = VELOCITY_LPF_ENABLE;
 float posFiltCutoff = POSITION_LPF_CUTOFF_FREQ;
 float velFiltCutoff = VELOCITY_LPF_CUTOFF_FREQ;
+bool posZFiltEnable = ZPOSITION_LPF_ENABLE;
+bool velZFiltEnable = ZVELOCITY_LPF_ENABLE;
+float posZFiltCutoff = ZPOSITION_LPF_CUTOFF_FREQ;
+float velZFiltCutoff = ZVELOCITY_LPF_CUTOFF_FREQ;
 
 #ifndef UNIT_TEST
 static struct this_s this = {
@@ -168,14 +177,14 @@ void positionControllerInit()
   pidInit(&this.pidY.pid, this.pidY.setpoint, this.pidY.init.kp, this.pidY.init.ki, this.pidY.init.kd,
       this.pidY.pid.dt, POSITION_RATE, posFiltCutoff, posFiltEnable);
   pidInit(&this.pidZ.pid, this.pidZ.setpoint, this.pidZ.init.kp, this.pidZ.init.ki, this.pidZ.init.kd,
-      this.pidZ.pid.dt, POSITION_RATE, posFiltCutoff, posFiltEnable);
+      this.pidZ.pid.dt, POSITION_RATE, posFiltCutoff, posZFiltEnable);
 
   pidInit(&this.pidVX.pid, this.pidVX.setpoint, this.pidVX.init.kp, this.pidVX.init.ki, this.pidVX.init.kd,
       this.pidVX.pid.dt, POSITION_RATE, velFiltCutoff, velFiltEnable);
   pidInit(&this.pidVY.pid, this.pidVY.setpoint, this.pidVY.init.kp, this.pidVY.init.ki, this.pidVY.init.kd,
       this.pidVY.pid.dt, POSITION_RATE, velFiltCutoff, velFiltEnable);
   pidInit(&this.pidVZ.pid, this.pidVZ.setpoint, this.pidVZ.init.kp, this.pidVZ.init.ki, this.pidVZ.init.kd,
-      this.pidVZ.pid.dt, POSITION_RATE, velFiltCutoff, velFiltEnable);
+      this.pidVZ.pid.dt, POSITION_RATE, velFiltCutoff, velZFiltEnable);
 }
 
 static float runPid(float input, struct pidAxis_s *axis, float setpoint, float dt) {
@@ -251,12 +260,17 @@ void positionControllerInBody(float* thrust, attitude_t *attitude, setpoint_t *s
   }
   if (setpoint->mode.y == modeAbs) {
     setpoint->velocity.y = runPid(state_body_y, &this.pidY, setp_body_y, DT);
-  } else if (setpoint->velocity_body) {
+    globalvx = setpoint->velocity.x*cosyaw - setpoint->velocity.y*sinyaw;
+    globalvy = setpoint->velocity.x*sinyaw + setpoint->velocity.y*cosyaw;
+  } else if (!setpoint->velocity_body) {
     setpoint->velocity.y = globalvy * cosyaw - globalvx * sinyaw;
   }
   if (setpoint->mode.z == modeAbs) {
     setpoint->velocity.z = runPid(state->position.z, &this.pidZ, setpoint->position.z, DT);
   }
+
+  setpointvx = globalvx;
+  setpointvy = globalvy;
 
   velocityControllerInBody(thrust, attitude, setpoint, state);
 }
@@ -275,6 +289,7 @@ void positionControllerInGlobal(float* thrust, attitude_t *attitude, setpoint_t 
   float bodyvx = setpoint->velocity.x;
   float bodyvy = setpoint->velocity.y;
 
+  
   // X, Y
   if (setpoint->mode.x == modeAbs) {
     setpoint->velocity.x = runPid(state->position.x, &this.pidX, setpoint->position.x, DT);
@@ -289,6 +304,9 @@ void positionControllerInGlobal(float* thrust, attitude_t *attitude, setpoint_t 
   if (setpoint->mode.z == modeAbs) {
     setpoint->velocity.z = runPid(state->position.z, &this.pidZ, setpoint->position.z, DT);
   }
+
+  setpointvx = setpoint->velocity.x;
+  setpointvy = setpoint->velocity.y;
 
   velocityController(thrust, attitude, setpoint, state);
 }
@@ -354,17 +372,15 @@ void velocityControllerInBody(float* thrust, attitude_t *attitude, setpoint_t *s
 void positionController(float* thrust, attitude_t *attitude, setpoint_t *setpoint,
                                                              const state_t *state)
 {
+  setpointx = setpoint->position.x;
+  setpointy = setpoint->position.y;
+  
   if (POSITION_CONTROL_IN_BODY){
     if (singleLoop) positionControllerInBodySingleLoop(thrust, attitude, setpoint, state);
     else positionControllerInBody(thrust, attitude, setpoint, state);
+    
   }
   else positionControllerInGlobal(thrust, attitude, setpoint, state);
-
-  setpointx = setpoint->position.x;
-  setpointy = setpoint->position.y;
-  setpointvx = setpoint->velocity.x;
-  setpointvy = setpoint->velocity.y;
-
 }
 
 void positionControllerResetAllPID()
@@ -470,5 +486,9 @@ PARAM_ADD(PARAM_INT8, posFiltEn, &posFiltEnable)
 PARAM_ADD(PARAM_FLOAT, posFiltCut, &posFiltCutoff)
 PARAM_ADD(PARAM_INT8, velFiltEn, &velFiltEnable)
 PARAM_ADD(PARAM_FLOAT, velFiltCut, &velFiltCutoff)
+PARAM_ADD(PARAM_INT8, posZFiltEn, &posZFiltEnable)
+PARAM_ADD(PARAM_FLOAT, posZFiltCut, &posZFiltCutoff)
+PARAM_ADD(PARAM_INT8, velZFiltEn, &velZFiltEnable)
+PARAM_ADD(PARAM_FLOAT, velZFiltCut, &velZFiltCutoff)
 
 PARAM_GROUP_STOP(posVelFilt)
