@@ -77,6 +77,9 @@ static float velMaxOverhead = 1.10f;
 
 static const float thrustScale = 1000.0f;
 
+static float kFFx = 10.0; // feedforward term for x direction [deg / m/s]
+static float kFFy = 10.0; // feedforward term for x direction [deg / m/s]
+
 float bank_roll = 0.0f; // for logging & debugging
 float bank_pitch = 0.0f;
 
@@ -321,8 +324,8 @@ void velocityController(float* thrust, attitude_t *attitude, setpoint_t *setpoin
   //this.pidVZ.pid.outputLimit = (this.thrustBase - this.thrustMin) / thrustScale;
 
   // Roll and Pitch
-  float rollRaw  = runPid(state->velocity.x, &this.pidVX, setpoint->velocity.x, DT);
-  float pitchRaw = runPid(state->velocity.y, &this.pidVY, setpoint->velocity.y, DT);
+  float rollRaw  = runPid(state->velocity.x, &this.pidVX, setpoint->velocity.x, DT) + kFFx*setpoint->velocity.x;
+  float pitchRaw = runPid(state->velocity.y, &this.pidVY, setpoint->velocity.y, DT) + kFFy*setpoint->velocity.y;
 
   float yawRad = state->attitude.yaw * (float)M_PI / 180;
   attitude->pitch = -(rollRaw  * cosf(yawRad)) - (pitchRaw * sinf(yawRad));
@@ -351,8 +354,8 @@ void velocityControllerInBody(float* thrust, attitude_t *attitude, setpoint_t *s
   //this.pidVZ.pid.outputLimit = (this.thrustBase - this.thrustMin) / thrustScale;
 
   // Roll and Pitch
-  attitude->pitch = -runPid(state->velocity.x, &this.pidVX, setpoint->velocity.x, DT);
-  attitude->roll = -runPid(state->velocity.y, &this.pidVY, setpoint->velocity.y, DT);
+  attitude->pitch = -runPid(state->velocity.x, &this.pidVX, setpoint->velocity.x, DT) - kFFx*setpoint->velocity.x;
+  attitude->roll = -runPid(state->velocity.y, &this.pidVY, setpoint->velocity.y, DT) - kFFy*setpoint->velocity.y;
 
   attitude->roll  = constrain(attitude->roll,  -rLimit, rLimit);
   attitude->pitch = constrain(attitude->pitch, -pLimit, pLimit);
@@ -447,6 +450,9 @@ PARAM_ADD(PARAM_FLOAT, vyKd, &this.pidVY.pid.kd)
 PARAM_ADD(PARAM_FLOAT, vzKp, &this.pidVZ.pid.kp)
 PARAM_ADD(PARAM_FLOAT, vzKi, &this.pidVZ.pid.ki)
 PARAM_ADD(PARAM_FLOAT, vzKd, &this.pidVZ.pid.kd)
+
+PARAM_ADD(PARAM_FLOAT, vxKFF, &kFFx)
+PARAM_ADD(PARAM_FLOAT, vyKFF, &kFFy)
 
 PARAM_GROUP_STOP(velCtlPid)
 
