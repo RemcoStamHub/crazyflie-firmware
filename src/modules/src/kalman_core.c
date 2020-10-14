@@ -168,9 +168,9 @@ void kalmanCoreInit(kalmanCoreData_t* this) {
   this->S[KC_STATE_X] = initialX;
   this->S[KC_STATE_Y] = initialY;
   this->S[KC_STATE_Z] = initialZ;
-  this->S[KC_STATE_PX] = 0;
-  this->S[KC_STATE_PY] = 0;
-  this->S[KC_STATE_PZ] = 0;
+//  this->S[KC_STATE_PX] = 0;
+//  this->S[KC_STATE_PY] = 0;
+//  this->S[KC_STATE_PZ] = 0;
 //  this->S[KC_STATE_D0] = 0;
 //  this->S[KC_STATE_D1] = 0;
 //  this->S[KC_STATE_D2] = 0;
@@ -663,7 +663,7 @@ void kalmanCorePredict(kalmanCoreData_t* this, float cmdThrust, Axis3f *acc, Axi
   NO_DMA_CCM_SAFE_ZERO_INIT static float tmpNN2d[KC_STATE_DIM * KC_STATE_DIM];
   static __attribute__((aligned(4))) arm_matrix_instance_f32 tmpNN2m = { KC_STATE_DIM, KC_STATE_DIM, tmpNN2d};
 
-  // float dt2 = dt*dt;
+  float dt2 = dt*dt;
 
   // ====== DYNAMICS LINEARIZATION ======
   // Initialize as the identity
@@ -775,63 +775,59 @@ void kalmanCorePredict(kalmanCoreData_t* this, float cmdThrust, Axis3f *acc, Axi
   // When flying, the accelerometer directly measures thrust (hence is useless to estimate body angle while flying)
 
   float dx, dy, dz;
-  // float tmpSPX, tmpSPY, tmpSPZ;
-  // float zacc;
+  float tmpSPX, tmpSPY, tmpSPZ;
+  float zacc;
 
-  // if (quadIsFlying) // only acceleration in z direction
-  // {
-  //   // TODO: In the next lines, can either use cmdThrust/mass, or acc->z. Need to test which is more reliable.
-  //   // cmdThrust's error comes from poorly calibrated mass, and inexact cmdThrust -> thrust map
-  //   // acc->z's error comes from measurement noise and accelerometer scaling
-  //   // float zacc = cmdThrust;
-  //   zacc = acc->z;
+  if (quadIsFlying) // only acceleration in z direction
+  {
+    // TODO: In the next lines, can either use cmdThrust/mass, or acc->z. Need to test which is more reliable.
+    // cmdThrust's error comes from poorly calibrated mass, and inexact cmdThrust -> thrust map
+    // acc->z's error comes from measurement noise and accelerometer scaling
+    // float zacc = cmdThrust;
+    zacc = acc->z;
 
     // position updates in the body frame (will be rotated to inertial frame)
     dx = this->S[KC_STATE_PX] * dt;
     dy = this->S[KC_STATE_PY] * dt;
-    dz = this->S[KC_STATE_PZ] * dt; // + zacc * dt2 / 2.0f; // thrust can only be produced in the body's Z direction
+    dz = this->S[KC_STATE_PZ] * dt + zacc * dt2 / 2.0f; // thrust can only be produced in the body's Z direction
 
     // position update
     this->S[KC_STATE_X] += this->R[0][0] * dx + this->R[0][1] * dy + this->R[0][2] * dz;
     this->S[KC_STATE_Y] += this->R[1][0] * dx + this->R[1][1] * dy + this->R[1][2] * dz;
-    this->S[KC_STATE_Z] += this->R[2][0] * dx + this->R[2][1] * dy + this->R[2][2] * dz; // - GRAVITY_MAGNITUDE * dt2 / 2.0f;
+    this->S[KC_STATE_Z] += this->R[2][0] * dx + this->R[2][1] * dy + this->R[2][2] * dz - GRAVITY_MAGNITUDE * dt2 / 2.0f;
 
-    // // keep previous time step's state for the update
-    // tmpSPX = this->S[KC_STATE_PX];
-    // tmpSPY = this->S[KC_STATE_PY];
-    // tmpSPZ = this->S[KC_STATE_PZ];
+    // keep previous time step's state for the update
+    tmpSPX = this->S[KC_STATE_PX];
+    tmpSPY = this->S[KC_STATE_PY];
+    tmpSPZ = this->S[KC_STATE_PZ];
 
     // body-velocity update: accelerometers - gyros cross velocity - gravity in body frame
-    // this->S[KC_STATE_PX] += dt * (gyro->z * tmpSPY - gyro->y * tmpSPZ - GRAVITY_MAGNITUDE * this->R[2][0]);
-    // this->S[KC_STATE_PY] += dt * (-gyro->z * tmpSPX + gyro->x * tmpSPZ - GRAVITY_MAGNITUDE * this->R[2][1]);
-    // this->S[KC_STATE_PZ] += dt * (zacc + gyro->y * tmpSPX - gyro->x * tmpSPY - GRAVITY_MAGNITUDE * this->R[2][2]);
-    // this->S[KC_STATE_PX] += dt * (gyro->z * tmpSPY - gyro->y * tmpSPZ);
-    // this->S[KC_STATE_PY] += dt * (-gyro->z * tmpSPX + gyro->x * tmpSPZ);
-    // this->S[KC_STATE_PZ] += dt * (gyro->y * tmpSPX - gyro->x * tmpSPY);
-    
-  // }
-  // else // Acceleration can be in any direction, as measured by the accelerometer. This occurs, eg. in freefall or while being carried.
-  // {
-  //   // position updates in the body frame (will be rotated to inertial frame)
-  //   dx = this->S[KC_STATE_PX] * dt + acc->x * dt2 / 2.0f;
-  //   dy = this->S[KC_STATE_PY] * dt + acc->y * dt2 / 2.0f;
-  //   dz = this->S[KC_STATE_PZ] * dt + acc->z * dt2 / 2.0f; // thrust can only be produced in the body's Z direction
-    
-  //   // position update
-  //   this->S[KC_STATE_X] += this->R[0][0] * dx + this->R[0][1] * dy + this->R[0][2] * dz;
-  //   this->S[KC_STATE_Y] += this->R[1][0] * dx + this->R[1][1] * dy + this->R[1][2] * dz;
-  //   this->S[KC_STATE_Z] += this->R[2][0] * dx + this->R[2][1] * dy + this->R[2][2] * dz - GRAVITY_MAGNITUDE * dt2 / 2.0f;
+    this->S[KC_STATE_PX] += dt * (gyro->z * tmpSPY - gyro->y * tmpSPZ - GRAVITY_MAGNITUDE * this->R[2][0]);
+    this->S[KC_STATE_PY] += dt * (-gyro->z * tmpSPX + gyro->x * tmpSPZ - GRAVITY_MAGNITUDE * this->R[2][1]);
+    this->S[KC_STATE_PZ] += dt * (zacc + gyro->y * tmpSPX - gyro->x * tmpSPY - GRAVITY_MAGNITUDE * this->R[2][2]);
+  }
+  else // Acceleration can be in any direction, as measured by the accelerometer. This occurs, eg. in freefall or while being carried.
+  {
+    // position updates in the body frame (will be rotated to inertial frame)
+    dx = this->S[KC_STATE_PX] * dt + acc->x * dt2 / 2.0f;
+    dy = this->S[KC_STATE_PY] * dt + acc->y * dt2 / 2.0f;
+    dz = this->S[KC_STATE_PZ] * dt + acc->z * dt2 / 2.0f; // thrust can only be produced in the body's Z direction
 
-  //   // keep previous time step's state for the update
-  //   tmpSPX = this->S[KC_STATE_PX];
-  //   tmpSPY = this->S[KC_STATE_PY];
-  //   tmpSPZ = this->S[KC_STATE_PZ];
+    // position update
+    this->S[KC_STATE_X] += this->R[0][0] * dx + this->R[0][1] * dy + this->R[0][2] * dz;
+    this->S[KC_STATE_Y] += this->R[1][0] * dx + this->R[1][1] * dy + this->R[1][2] * dz;
+    this->S[KC_STATE_Z] += this->R[2][0] * dx + this->R[2][1] * dy + this->R[2][2] * dz - GRAVITY_MAGNITUDE * dt2 / 2.0f;
 
-  //   // body-velocity update: accelerometers - gyros cross velocity - gravity in body frame
-  //   this->S[KC_STATE_PX] += dt * (acc->x + gyro->z * tmpSPY - gyro->y * tmpSPZ - GRAVITY_MAGNITUDE * this->R[2][0]);
-  //   this->S[KC_STATE_PY] += dt * (acc->y - gyro->z * tmpSPX + gyro->x * tmpSPZ - GRAVITY_MAGNITUDE * this->R[2][1]);
-  //   this->S[KC_STATE_PZ] += dt * (acc->z + gyro->y * tmpSPX - gyro->x * tmpSPY - GRAVITY_MAGNITUDE * this->R[2][2]);
-  // }
+    // keep previous time step's state for the update
+    tmpSPX = this->S[KC_STATE_PX];
+    tmpSPY = this->S[KC_STATE_PY];
+    tmpSPZ = this->S[KC_STATE_PZ];
+
+    // body-velocity update: accelerometers - gyros cross velocity - gravity in body frame
+    this->S[KC_STATE_PX] += dt * (acc->x + gyro->z * tmpSPY - gyro->y * tmpSPZ - GRAVITY_MAGNITUDE * this->R[2][0]);
+    this->S[KC_STATE_PY] += dt * (acc->y - gyro->z * tmpSPX + gyro->x * tmpSPZ - GRAVITY_MAGNITUDE * this->R[2][1]);
+    this->S[KC_STATE_PZ] += dt * (acc->z + gyro->y * tmpSPX - gyro->x * tmpSPY - GRAVITY_MAGNITUDE * this->R[2][2]);
+  }
 
   // attitude update (rotate by gyroscope), we do this in quaternions
   // this is the gyroscope angular velocity integrated over the sample period
@@ -876,12 +872,9 @@ void kalmanCoreAddProcessNoise(kalmanCoreData_t* this, float dt)
 {
   if (dt>0)
   {
-    // this->P[KC_STATE_X][KC_STATE_X] += powf(procNoiseAcc_xy*dt*dt + procNoiseVel*dt + procNoisePos, 2);  // add process noise on position
-    // this->P[KC_STATE_Y][KC_STATE_Y] += powf(procNoiseAcc_xy*dt*dt + procNoiseVel*dt + procNoisePos, 2);  // add process noise on position
-    // this->P[KC_STATE_Z][KC_STATE_Z] += powf(procNoiseAcc_z*dt*dt + procNoiseVel*dt + procNoisePos, 2);  // add process noise on position
-    this->P[KC_STATE_X][KC_STATE_X] += powf(procNoiseVel*dt + procNoisePos, 2);  // add process noise on position
-    this->P[KC_STATE_Y][KC_STATE_Y] += powf(procNoiseVel*dt + procNoisePos, 2);  // add process noise on position
-    this->P[KC_STATE_Z][KC_STATE_Z] += powf(procNoiseVel*dt + procNoisePos, 2);  // add process noise on position
+    this->P[KC_STATE_X][KC_STATE_X] += powf(procNoiseAcc_xy*dt*dt + procNoiseVel*dt + procNoisePos, 2);  // add process noise on position
+    this->P[KC_STATE_Y][KC_STATE_Y] += powf(procNoiseAcc_xy*dt*dt + procNoiseVel*dt + procNoisePos, 2);  // add process noise on position
+    this->P[KC_STATE_Z][KC_STATE_Z] += powf(procNoiseAcc_z*dt*dt + procNoiseVel*dt + procNoisePos, 2);  // add process noise on position
 
     this->P[KC_STATE_PX][KC_STATE_PX] += powf(procNoiseAcc_xy*dt + procNoiseVel, 2); // add process noise on velocity
     this->P[KC_STATE_PY][KC_STATE_PY] += powf(procNoiseAcc_xy*dt + procNoiseVel, 2); // add process noise on velocity
@@ -908,8 +901,7 @@ void kalmanCoreAddProcessNoise(kalmanCoreData_t* this, float dt)
   assertStateNotNaN(this);
 }
 
-struct mat33 RotMat;
-struct quat AttQuat;
+
 
 void kalmanCoreFinalize(kalmanCoreData_t* this, uint32_t tick)
 {
@@ -991,27 +983,17 @@ void kalmanCoreFinalize(kalmanCoreData_t* this, uint32_t tick)
   }
 
   // convert the new attitude to a rotation matrix, such that we can rotate body-frame velocity and acc
-  // this->R[0][0] = this->q[0] * this->q[0] + this->q[1] * this->q[1] - this->q[2] * this->q[2] - this->q[3] * this->q[3];
-  // this->R[0][1] = 2 * this->q[1] * this->q[2] - 2 * this->q[0] * this->q[3];
-  // this->R[0][2] = 2 * this->q[1] * this->q[3] + 2 * this->q[0] * this->q[2];
+  this->R[0][0] = this->q[0] * this->q[0] + this->q[1] * this->q[1] - this->q[2] * this->q[2] - this->q[3] * this->q[3];
+  this->R[0][1] = 2 * this->q[1] * this->q[2] - 2 * this->q[0] * this->q[3];
+  this->R[0][2] = 2 * this->q[1] * this->q[3] + 2 * this->q[0] * this->q[2];
 
-  // this->R[1][0] = 2 * this->q[1] * this->q[2] + 2 * this->q[0] * this->q[3];
-  // this->R[1][1] = this->q[0] * this->q[0] - this->q[1] * this->q[1] + this->q[2] * this->q[2] - this->q[3] * this->q[3];
-  // this->R[1][2] = 2 * this->q[2] * this->q[3] - 2 * this->q[0] * this->q[1];
+  this->R[1][0] = 2 * this->q[1] * this->q[2] + 2 * this->q[0] * this->q[3];
+  this->R[1][1] = this->q[0] * this->q[0] - this->q[1] * this->q[1] + this->q[2] * this->q[2] - this->q[3] * this->q[3];
+  this->R[1][2] = 2 * this->q[2] * this->q[3] - 2 * this->q[0] * this->q[1];
 
-  // this->R[2][0] = 2 * this->q[1] * this->q[3] - 2 * this->q[0] * this->q[2];
-  // this->R[2][1] = 2 * this->q[2] * this->q[3] + 2 * this->q[0] * this->q[1];
-  // this->R[2][2] = this->q[0] * this->q[0] - this->q[1] * this->q[1] - this->q[2] * this->q[2] + this->q[3] * this->q[3];
-
-  this->R[0][0] = RotMat.m[0][0];
-  this->R[0][1] = RotMat.m[0][1];
-  this->R[0][2] = RotMat.m[0][2];
-  this->R[1][0] = RotMat.m[1][0];
-  this->R[1][1] = RotMat.m[1][1];
-  this->R[1][2] = RotMat.m[1][2];
-  this->R[2][0] = RotMat.m[2][0];
-  this->R[2][1] = RotMat.m[2][1];
-  this->R[2][2] = RotMat.m[2][2]; 
+  this->R[2][0] = 2 * this->q[1] * this->q[3] - 2 * this->q[0] * this->q[2];
+  this->R[2][1] = 2 * this->q[2] * this->q[3] + 2 * this->q[0] * this->q[1];
+  this->R[2][2] = this->q[0] * this->q[0] - this->q[1] * this->q[1] - this->q[2] * this->q[2] + this->q[3] * this->q[3];
 
   // reset the attitude error
   this->S[KC_STATE_D0] = 0;
@@ -1107,8 +1089,6 @@ void kalmanCoreExternalizeState(const kalmanCoreData_t* this, state_t *state, co
 
     // Save attitude, adjusted for the legacy CF2 body coordinate system
     sensfusion6GetEulerRPY(&compl_roll, &compl_pitch, &compl_yaw);
-
-    
     
     // Save quaternion, hopefully one day this could be used in a better controller.
     // Note that this is not adjusted for the legacy coordinate system
@@ -1117,18 +1097,11 @@ void kalmanCoreExternalizeState(const kalmanCoreData_t* this, state_t *state, co
       &state->attitudeQuaternion.y,
       &state->attitudeQuaternion.z,
       &state->attitudeQuaternion.w);
-
-    AttQuat.x = state->attitudeQuaternion.x;
-    AttQuat.y = state->attitudeQuaternion.y;
-    AttQuat.z = state->attitudeQuaternion.z;
-    AttQuat.w = state->attitudeQuaternion.w;
-    
-    RotMat = quat2rotmat(AttQuat);
   }
   state->attitude.roll=compl_roll;
   state->attitude.pitch=compl_pitch;
-  //state->attitude.yaw=compl_yaw;
-  state->attitude.yaw=yaw*RAD_TO_DEG;
+  state->attitude.yaw=compl_yaw;
+  //state->attitude.yaw=yaw*RAD_TO_DEG;
 
   assertStateNotNaN(this);
 }
