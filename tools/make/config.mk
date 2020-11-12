@@ -3,31 +3,32 @@
 
 ## Setup for Bolt
 PLATFORM = cf2
-# ESTIMATOR = complementary
-ESTIMATOR = kalman
-POWER_DISTRIBUTION = nimble
+ESTIMATOR = complementary
+# ESTIMATOR = kalman
+# POWER_DISTRIBUTION = nimble
+POWER_DISTRIBUTION = nimble_FD_PCB
 
-# CFLAGS += -DUSDDECK_USE_ALT_PINS_AND_SPI # enables SD card on alternate pins
-# CFLAGS += -DLOCODECK_USE_ALT_PINS # use alternate pins for PATCHED Loco Deck (to enable simultaneous SD card logging)
-CFLAGS += -DDECK_FORCE=bcUSD # force the SD card deck
-# CFLAGS += -DDECK_FORCE=bcCPPM # force the CCPM deck
-# CFLAGS += -DDECK_FORCE=bcUSD:bcCPPM # force the SD card deck and the CPPM deck
+# # CFLAGS += -DUSDDECK_USE_ALT_PINS_AND_SPI # enables SD card on alternate pins
+# # CFLAGS += -DLOCODECK_USE_ALT_PINS # use alternate pins for PATCHED Loco Deck (to enable simultaneous SD card logging)
+# CFLAGS += -DDECK_FORCE=bcUSD # force the SD card deck
+# # CFLAGS += -DDECK_FORCE=bcCPPM # force the CCPM deck
+# # CFLAGS += -DDECK_FORCE=bcUSD:bcCPPM # force the SD card deck and the CPPM deck
 
-# CFLAGS += -DTURN_OFF_LED
-# CFLAGS += -DLEDRING_DEFAULT_EFFECT=1
-# CFLAGS += -DLED_RING_NBR_LEDS=9
-# CFLAGS += -DDECK_FORCE=bcLedRing
+# # CFLAGS += -DTURN_OFF_LED
+# # CFLAGS += -DLEDRING_DEFAULT_EFFECT=1
+# # CFLAGS += -DLED_RING_NBR_LEDS=9
+# # CFLAGS += -DDECK_FORCE=bcLedRing
 
 #################################################
-# ## Setup for Roadrunner
+## Setup for Roadrunner
 # PLATFORM = tag
 # POWER_DISTRIBUTION = nimble_roadrunner
 
-# # # Disable UWB 
-# # ESTIMATOR = complementary
-# # CFLAGS += -DDISABLE_LOCO_DECK
-# # CFLAGS += -DDECK_FORCE=bcBigQuad
-# # CFLAGS += -DENABLE_BQ_DECK
+# # Disable UWB 
+# ESTIMATOR = complementary
+# CFLAGS += -DDISABLE_LOCO_DECK
+# CFLAGS += -DDECK_FORCE=bcBigQuad
+# CFLAGS += -DENABLE_BQ_DECK
 
 # # Enable UWB
 # ESTIMATOR = kalman
@@ -35,10 +36,10 @@ CFLAGS += -DDECK_FORCE=bcUSD # force the SD card deck
 # CFLAGS += -DDECK_FORCE=bcBigQuad:bcDWM1000:bcUSD
 # CFLAGS += -DENABLE_BQ_DECK
 
-# # CFLAGS += -DTURN_OFF_LED
-# # CFLAGS += -DLEDRING_DEFAULT_EFFECT=1
-# # CFLAGS += -DLED_RING_NBR_LEDS=9
-# # CFLAGS += -DDECK_FORCE=bcLedRing
+# CFLAGS += -DTURN_OFF_LED
+# CFLAGS += -DLEDRING_DEFAULT_EFFECT=1
+# CFLAGS += -DLED_RING_NBR_LEDS=9
+# CFLAGS += -DDECK_FORCE=bcLedRing
 
 ###############################################
 
