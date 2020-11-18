@@ -80,8 +80,12 @@ void powerDistribution(const control_t *control)
 {
   static float pitch_ampl = 0.4; // 1 = full servo stroke
   static float roll_trim = 0;
-  static float pitch_trim = -0.1;
-  static float yaw_trim = 0.1;
+  // Trims James
+  // static float pitch_trim = 0.23;
+  // static float yaw_trim = -0.05; // positive is CW viewed from the top
+  // Trims Guillermo & Sara
+  static float pitch_trim = -0.23;
+  static float yaw_trim = -0.05; // positive is CW viewed from the top
   static int16_t act_max = 32767;
   
   motorPower.m2 = limitThrust(act_max * (1 + pitch_trim) - pitch_ampl*control->pitch); // pitch servo

@@ -14,9 +14,10 @@ POWER_DISTRIBUTION = nimble_FD_PCB
 # # CFLAGS += -DDECK_FORCE=bcCPPM # force the CCPM deck
 # # CFLAGS += -DDECK_FORCE=bcUSD:bcCPPM # force the SD card deck and the CPPM deck
 
+CFLAGS += -DDECK_FORCE=bcUSD:bcLedRing # force the SD card deck and the LED Ring deck
 # # CFLAGS += -DTURN_OFF_LED
-# # CFLAGS += -DLEDRING_DEFAULT_EFFECT=1
-# # CFLAGS += -DLED_RING_NBR_LEDS=9
+CFLAGS += -DLEDRING_DEFAULT_EFFECT=0
+# # CFLAGS += -DLED_RING_NBR_LEDS=1
 # # CFLAGS += -DDECK_FORCE=bcLedRing
 
 #################################################
