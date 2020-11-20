@@ -176,7 +176,7 @@ static void sitAwPreThrustUpdateCallOut(setpoint_t *setpoint)
       }
 #endif
 
-#ifdef SITAW_TU_ENABLED
+#ifdef SITAW_CR_ENABLED
       if(sitAwCrDetected()) {
         /* Kill the thrust to the motors if a Crash situation is detected. */
         stabilizerSetEmergencyStop();

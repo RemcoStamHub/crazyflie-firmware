@@ -83,8 +83,16 @@ void powerDistribution(const control_t *control)
   // Trims James
   // static float pitch_trim = 0.23;
   // static float yaw_trim = -0.05; // positive is CW viewed from the top
-  // Trims Guillermo & Sara
-  static float pitch_trim = -0.23;
+  // // Trims Sara
+  // static float pitch_trim = -0.23;
+  // static float yaw_trim = -0.05; // positive is CW viewed from the top
+  // // Trims Matej
+  // static float pitch_trim = 0.0; // positive --> positive dihedral in forward flight
+  // static float yaw_trim = -0.05; // positive is CW viewed from the top
+  // static int16_t act_max = 32767;
+  
+  // Trims Guillermo
+  static float pitch_trim = 0.15; // positive --> positive dihedral in forward flight
   static float yaw_trim = -0.05; // positive is CW viewed from the top
   static int16_t act_max = 32767;
   

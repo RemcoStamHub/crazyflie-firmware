@@ -41,7 +41,7 @@ void sitAwUpdateSetpoint(setpoint_t *setpoint, const sensorData_t *sensorData,
 //#define SITAW_FF_ENABLED           /* Uncomment to enable */
 //#define SITAW_AR_ENABLED           /* Uncomment to enable */
 #define SITAW_TU_ENABLED           /* Uncomment to enable */
-#define SITAW_CR_ENABLED           /* Uncomment to enable */
+// #define SITAW_CR_ENABLED           /* Uncomment to enable */
 
 /* Configuration options for the 'Free Fall' detection. */
 #define SITAW_FF_THRESHOLD 0.1     /* The default tolerance for AccWZ deviations from -1, indicating Free Fall. */
@@ -75,7 +75,7 @@ void sitAwUpdateSetpoint(setpoint_t *setpoint, const sensorData_t *sensorData,
 //#define SITAW_FF_PARAM_ENABLED     /* Uncomment to enable PARAM framework for the Free Fall detection. */
 //#define SITAW_AR_PARAM_ENABLED     /* Uncomment to enable PARAM framework for the At Rest detection. */
 #define SITAW_TU_PARAM_ENABLED     /* Uncomment to enable PARAM framework for the Tumbled detection. */
-#define SITAW_CR_PARAM_ENABLED     /* Uncomment to enable PARAM framework for the Crash detection. */
+// #define SITAW_CR_PARAM_ENABLED     /* Uncomment to enable PARAM framework for the Crash detection. */
 
 #ifdef SITAW_FF_ENABLED
 bool sitAwFFDetected(void);
