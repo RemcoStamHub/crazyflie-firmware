@@ -95,11 +95,11 @@ void powerDistribution(const control_t *control)
  
   static int16_t act_max = 32767;
   
-  motorPower.m2 = limitThrust(act_max * (1 + pitch_trim) - pitch_ampl*control->pitch); // pitch servo
+  motorPower.m2 = limitThrust(act_max * (1 + pitch_trim) + pitch_ampl*control->pitch); // pitch servo
   motorPower.m3 = limitThrust(act_max * (1 + yaw_trim) - control->yaw); // yaw servo
   
-  motorPower.m1 = limitThrust( 0.5f * control->roll + control->thrust * (1 + roll_trim) ); // left motor
-  motorPower.m4 = limitThrust(-0.5f * control->roll + control->thrust * (1 - roll_trim) ); // right motor
+  motorPower.m1 = limitThrust(-0.5f * control->roll + control->thrust * (1 + roll_trim) ); // left motor
+  motorPower.m4 = limitThrust( 0.5f * control->roll + control->thrust * (1 - roll_trim) ); // right motor
   
   if (motorSetEnable)
   {
