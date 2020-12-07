@@ -327,7 +327,7 @@ void controllerINDI(control_t *control, setpoint_t *setpoint,
 
 	indi.thrust = actuatorThrust;
 	r_roll = radians(sensors->gyro.z);
-	r_pitch = radians(sensors->gyro.y);
+	r_pitch = -radians(sensors->gyro.y);
 	r_yaw = -radians(sensors->gyro.x);
 	accelz = -sensors->acc.x;
 

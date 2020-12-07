@@ -120,7 +120,7 @@ void controllerPid(control_t *control, setpoint_t *setpoint,
     }
 
     // TODO: Investigate possibility to subtract gyro drift.
-    attitudeControllerCorrectRatePID(sensors->gyro.z, sensors->gyro.y, -sensors->gyro.x,
+    attitudeControllerCorrectRatePID(sensors->gyro.z, -sensors->gyro.y, -sensors->gyro.x,
                              rateDesired.roll, rateDesired.pitch, rateDesired.yaw);
 
     attitudeControllerGetActuatorOutput(&control->roll,
@@ -134,7 +134,7 @@ void controllerPid(control_t *control, setpoint_t *setpoint,
     cmd_pitch = control->pitch;
     cmd_yaw = control->yaw;
     r_roll = radians(sensors->gyro.z);
-    r_pitch = radians(sensors->gyro.y);
+    r_pitch = -radians(sensors->gyro.y);
     r_yaw = -radians(sensors->gyro.x);
     accelz = -sensors->acc.x;
   }
