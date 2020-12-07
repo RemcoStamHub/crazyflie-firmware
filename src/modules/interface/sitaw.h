@@ -40,7 +40,7 @@ void sitAwUpdateSetpoint(setpoint_t *setpoint, const sensorData_t *sensorData,
 /* Enable the different functions of the situation awareness framework. */
 //#define SITAW_FF_ENABLED           /* Uncomment to enable */
 //#define SITAW_AR_ENABLED           /* Uncomment to enable */
-#define SITAW_TU_ENABLED           /* Uncomment to enable */
+// #define SITAW_TU_ENABLED           /* Uncomment to enable */
 // #define SITAW_CR_ENABLED           /* Uncomment to enable */
 
 /* Configuration options for the 'Free Fall' detection. */

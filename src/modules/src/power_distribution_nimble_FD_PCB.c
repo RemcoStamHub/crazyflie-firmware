@@ -81,16 +81,14 @@ void powerDistribution(const control_t *control)
   static float pitch_ampl = 0.4; // 1 = full servo stroke
   static float roll_trim = 0;
   // Trims James
-  static float pitch_trim = 0.23;
-  static float yaw_trim = -0.05; // positive is CW viewed from the top
+  // static float pitch_trim = 0.23;
+  // static float yaw_trim = -0.05; // positive is CW viewed from the top
   // Trims Sara
   // static float pitch_trim = -0.23;
   // static float yaw_trim = -0.05; // positive is CW viewed from the top
   // Trims Matej
-  // static float pitch_trim = 0.0; // positive --> positive dihedral in forward flight
-  // static float yaw_trim = -0.05; // positive is CW viewed from the top
-  // static int16_t act_max = 32767;
-  
+  static float pitch_trim = -0.1; // positive --> positive dihedral in forward flight
+  static float yaw_trim = 0.05; // positive is CW viewed from the top
   // Trims Guillermo
   // static float pitch_trim = 0.15; // positive --> positive dihedral in forward flight
   // static float yaw_trim = -0.05; // positive is CW viewed from the top
