@@ -939,43 +939,49 @@ static void timeMemEffect(uint8_t outputBuffer[][3], bool reset)
 static uint8_t headRed=100, headGreen=100, headBlue=100;
 static uint8_t heartRed=100, heartGreen=0, heartBlue=0;
 static uint8_t bodyRed=100, bodyGreen=100, bodyBlue=100;
-static float step = 0.20;
-static int8_t sign = 1;
+// static float step = 0.20;
+// static int8_t sign = 1;
 static void angelEffect(uint8_t buffer[][3], bool reset)
 {
   int i;
-  static float brightness=0;
-  static float brightness2=0;
+  static float brightness=0.35;
+  // static float brightness2=0;
+  static float brightness_full=2.5;
 
-  if (reset) brightness = 0;
+  // if (reset) brightness = 0;
 
-  if (brightness >= 3) sign=-1;
-  else if (brightness <= 0) sign=1;
+  // if (brightness >= 3) sign=-1;
+  // else if (brightness <= 0) sign=1;
   
-  brightness += sign*step;
+  // brightness += sign*step;
   
-  if (brightness > 1) brightness2 = 1;
-  else brightness2 = brightness;
+  // if (brightness > 1) brightness2 = 1;
+  // else brightness2 = brightness;
+
+
 
   for (i=0; i<NBR_LEDS; i++)
   {
     if (i < 4)
     {
-      buffer[i][0] = headRed;
-      buffer[i][1] = headGreen;
-      buffer[i][2] = headBlue;
+      buffer[i][0] = brightness*headRed;
+      buffer[i][1] = brightness*headGreen;
+      buffer[i][2] = brightness*headBlue;
     }
-    else if (i==5 || i==18)
+    else if (i==5)
     {
-      buffer[i][0] = heartRed*brightness2;
-      buffer[i][1] = heartGreen*brightness2;
-      buffer[i][2] = heartBlue*brightness2;
+      // buffer[i][0] = heartRed*brightness2;
+      // buffer[i][1] = heartGreen*brightness2;
+      // buffer[i][2] = heartBlue*brightness2;
+      buffer[i][0] = heartRed*brightness_full;
+      buffer[i][1] = heartGreen*brightness_full;
+      buffer[i][2] = heartBlue*brightness_full;
     }
     else
     {
-      buffer[i][0] = bodyRed;
-      buffer[i][1] = bodyGreen;
-      buffer[i][2] = bodyBlue;
+      buffer[i][0] = brightness*bodyRed;
+      buffer[i][1] = brightness*bodyGreen;
+      buffer[i][2] = brightness*bodyBlue;
     }
     
     

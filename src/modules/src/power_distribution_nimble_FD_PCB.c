@@ -52,9 +52,19 @@ static struct {
   uint16_t m4;
 } motorPowerSet;
 
+static struct {
+  float roll;
+  float pitch;
+  float yaw;
+} servoTrims;
+
 void powerDistributionInit(void)
 {
   motorsInit(platformConfigGetMotorMapping());
+  
+  servoTrims.roll = 0.0;
+  servoTrims.pitch = -0.1;
+  servoTrims.yaw = 0.05;
 }
 
 bool powerDistributionTest(void)
@@ -79,7 +89,7 @@ void powerStop()
 void powerDistribution(const control_t *control)
 {
   static float pitch_ampl = 0.4; // 1 = full servo stroke
-  static float roll_trim = 0;
+  // static float roll_trim = 0;
   // Trims James
   // static float pitch_trim = 0.23;
   // static float yaw_trim = -0.05; // positive is CW viewed from the top
@@ -87,19 +97,19 @@ void powerDistribution(const control_t *control)
   // static float pitch_trim = -0.23;
   // static float yaw_trim = -0.05; // positive is CW viewed from the top
   // Trims Matej
-  static float pitch_trim = -0.1; // positive --> positive dihedral in forward flight
-  static float yaw_trim = 0.05; // positive is CW viewed from the top
+  // static float pitch_trim = -0.1; // positive --> positive dihedral in forward flight
+  // static float yaw_trim = 0.05; // positive is CW viewed from the top
   // Trims Guillermo
   // static float pitch_trim = 0.15; // positive --> positive dihedral in forward flight
   // static float yaw_trim = -0.05; // positive is CW viewed from the top
  
   static int16_t act_max = 32767;
   
-  motorPower.m2 = limitThrust(act_max * (1 + pitch_trim) + pitch_ampl*control->pitch); // pitch servo
-  motorPower.m3 = limitThrust(act_max * (1 + yaw_trim) - control->yaw); // yaw servo
+  motorPower.m2 = limitThrust(act_max * (1 + servoTrims.pitch) + pitch_ampl*control->pitch); // pitch servo
+  motorPower.m3 = limitThrust(act_max * (1 + servoTrims.yaw) - control->yaw); // yaw servo
   
-  motorPower.m1 = limitThrust(-0.5f * control->roll + control->thrust * (1 + roll_trim) ); // left motor
-  motorPower.m4 = limitThrust( 0.5f * control->roll + control->thrust * (1 - roll_trim) ); // right motor
+  motorPower.m1 = limitThrust(-0.5f * control->roll + control->thrust * (1 + servoTrims.roll) ); // left motor
+  motorPower.m4 = limitThrust( 0.5f * control->roll + control->thrust * (1 - servoTrims.roll) ); // right motor
   
   if (motorSetEnable)
   {
@@ -124,6 +134,12 @@ PARAM_ADD(PARAM_UINT16, m2, &motorPowerSet.m2)
 PARAM_ADD(PARAM_UINT16, m3, &motorPowerSet.m3)
 PARAM_ADD(PARAM_UINT16, m4, &motorPowerSet.m4)
 PARAM_GROUP_STOP(motorPowerSet)
+
+PARAM_GROUP_START(_servoTrims)
+PARAM_ADD(PARAM_FLOAT, rollTrim, &servoTrims.roll)
+PARAM_ADD(PARAM_FLOAT, pitchTrim, &servoTrims.pitch)
+PARAM_ADD(PARAM_FLOAT, yawTrim, &servoTrims.yaw)
+PARAM_GROUP_STOP(servoTrims)
 
 LOG_GROUP_START(motor)
 LOG_ADD(LOG_UINT32, m1, &motorPower.m1)
