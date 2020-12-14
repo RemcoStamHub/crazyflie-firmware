@@ -63,7 +63,7 @@ void powerDistributionInit(void)
   motorsInit(platformConfigGetMotorMapping());
   
   servoTrims.roll = 0.0;
-  servoTrims.pitch = -0.1;
+  servoTrims.pitch = 0.23;
   servoTrims.yaw = 0.05;
 }
 
@@ -105,7 +105,7 @@ void powerDistribution(const control_t *control)
  
   static int16_t act_max = 32767;
   
-  motorPower.m2 = limitThrust(act_max * (1 + servoTrims.pitch) + pitch_ampl*control->pitch); // pitch servo
+  motorPower.m2 = limitThrust(act_max * (1 + servoTrims.pitch) - pitch_ampl*control->pitch); // pitch servo
   motorPower.m3 = limitThrust(act_max * (1 + servoTrims.yaw) - control->yaw); // yaw servo
   
   motorPower.m1 = limitThrust(-0.5f * control->roll + control->thrust * (1 + servoTrims.roll) ); // left motor
