@@ -248,8 +248,8 @@ void controllerINDI(control_t *control, setpoint_t *setpoint,
 		 * 1 - Update the gyro filter with the new measurements.
 		 */
 
-		float stateAttitudeRateRoll = radians(sensors->gyro.z);
-		float stateAttitudeRatePitch = radians(sensors->gyro.y); // Account for Crazyflie coordinate system
+		float stateAttitudeRateRoll = -radians(sensors->gyro.z);
+		float stateAttitudeRatePitch = -radians(sensors->gyro.y); // Account for Crazyflie coordinate system
 		float stateAttitudeRateYaw = -radians(sensors->gyro.x);
 
 		struct FloatRates body_rates = {
@@ -326,8 +326,8 @@ void controllerINDI(control_t *control, setpoint_t *setpoint,
 	}
 
 	indi.thrust = actuatorThrust;
-	r_roll = radians(sensors->gyro.z);
-	r_pitch = -radians(sensors->gyro.y);
+	r_roll = -radians(sensors->gyro.z);
+	r_pitch = radians(sensors->gyro.y); // opposite sign due to legacy CF2 frame
 	r_yaw = -radians(sensors->gyro.x);
 	accelz = -sensors->acc.x;
 

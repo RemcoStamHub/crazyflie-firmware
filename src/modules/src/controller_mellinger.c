@@ -255,8 +255,8 @@ void controllerMellinger(control_t *control, setpoint_t *setpoint,
   float err_d_roll = 0;
   float err_d_pitch = 0;
 
-  float stateAttitudeRateRoll = radians(sensors->gyro.z);
-  float stateAttitudeRatePitch = radians(sensors->gyro.y);
+  float stateAttitudeRateRoll = -radians(sensors->gyro.z);
+  float stateAttitudeRatePitch = -radians(sensors->gyro.y);
   float stateAttitudeRateYaw = -radians(sensors->gyro.x);
 
   ew.x = radians(setpoint->attitudeRate.roll) - stateAttitudeRateRoll;
@@ -294,8 +294,8 @@ void controllerMellinger(control_t *control, setpoint_t *setpoint,
   }
 
   cmd_thrust = control->thrust;
-  r_roll = radians(sensors->gyro.z);
-  r_pitch = -radians(sensors->gyro.y);
+  r_roll = -radians(sensors->gyro.z);
+  r_pitch = radians(sensors->gyro.y); // opposite sign due to legacy CF2 frame
   r_yaw = -radians(sensors->gyro.x);
   accelz = -sensors->acc.x;
 
