@@ -49,17 +49,31 @@
 
 #define EXTRX_NR_CHANNELS  8
 
-#define EXTRX_CH_TRUST     0
-#define EXTRX_CH_ROLL      1
-#define EXTRX_CH_PITCH     2
-#define EXTRX_CH_YAW       3
 
-#define EXTRX_SIGN_ROLL    (1)
-#define EXTRX_SIGN_PITCH   (-1)
-#define EXTRX_SIGN_YAW     (-1)
+#ifdef EXTRX_BETA_FPV_RADIO
+  // BetaFPV Radio Lite 2
+  #define EXTRX_CH_TRUST     2
+  #define EXTRX_CH_ROLL      0
+  #define EXTRX_CH_PITCH     1
+  #define EXTRX_CH_YAW       3
 
-#define EXTRX_SCALE_ROLL   (40.0f)
-#define EXTRX_SCALE_PITCH  (40.0f)
+  #define EXTRX_SIGN_ROLL    (1)
+  #define EXTRX_SIGN_PITCH   (-1)
+  #define EXTRX_SIGN_YAW     (-1)
+#else
+  // Taranis X-Lite
+  #define EXTRX_CH_TRUST     0
+  #define EXTRX_CH_ROLL      1
+  #define EXTRX_CH_PITCH     2
+  #define EXTRX_CH_YAW       3
+
+  #define EXTRX_SIGN_ROLL    (1)
+  #define EXTRX_SIGN_PITCH   (-1)
+  #define EXTRX_SIGN_YAW     (-1)
+#endif
+
+#define EXTRX_SCALE_ROLL   (44.0f)
+#define EXTRX_SCALE_PITCH  (60.0f)
 #define EXTRX_SCALE_YAW    (100.0f)
 #define EXTRX_SCALE_THRUST   (65535.0f)
 

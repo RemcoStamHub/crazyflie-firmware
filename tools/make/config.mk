@@ -12,6 +12,7 @@ POWER_DISTRIBUTION = nimble_FD_PCB
 # # CFLAGS += -DLOCODECK_USE_ALT_PINS # use alternate pins for PATCHED Loco Deck (to enable simultaneous SD card logging)
 # CFLAGS += -DDECK_FORCE=bcUSD # force the SD card deck
 CFLAGS += -DDECK_FORCE=bcCPPM # force the CCPM deck
+CFLAGS += -DEXTRX_BETA_FPV_RADIO # channel mapping for BetaFPV Radio Lite 2
 # # CFLAGS += -DDECK_FORCE=bcUSD:bcCPPM # force the SD card deck and the CPPM deck
 
 ##CFLAGS += -DDECK_FORCE=bcUSD:bcLedRing # force the SD card deck and the LED Ring deck
