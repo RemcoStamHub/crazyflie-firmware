@@ -34,76 +34,113 @@
 
 
 import logging
-from threading import Event
+import time
 
 import cflib.crtp  # noqa
 from cflib.crazyflie import Crazyflie
 from cflib.crazyflie.mem import LighthouseBsCalibration
 from cflib.crazyflie.mem import LighthouseBsGeometry
+from cflib.crazyflie.mem import MemoryElement
 from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
-from cflib.localization import LighthouseConfigWriter
 
-uri = 'radio://0/80'
+uri = 'radio://0/100/2M/E7E7E7E703'
 
 
 class WriteMem:
     def __init__(self, uri, geos, calibs):
-        self._event = Event()
+        self.data_written = False
+        self.result_received = False
 
         with SyncCrazyflie(uri, cf=Crazyflie(rw_cache='./cache')) as scf:
-            writer = LighthouseConfigWriter(scf.cf, nr_of_base_stations=2)
-            writer.write_and_store_config(self._data_written, geos=geos, calibs=calibs)
-            self._event.wait()
+            mems = scf.cf.mem.get_mems(MemoryElement.TYPE_LH)
 
-    def _data_written(self, sucess):
-        print('Data written')
-        self._event.set()
+            count = len(mems)
+            if count != 1:
+                raise Exception('Unexpected nr of memories found:', count)
+
+            lh_mem = mems[0]
+
+            for bs, geo in geos.items():
+                self.data_written = False
+                print('Write geoetry', bs, 'to RAM')
+                lh_mem.write_geo_data(bs, geo, self._data_written, write_failed_cb=self._data_failed)
+
+                while not self.data_written:
+                    time.sleep(0.1)
+
+            for bs, calib in calibs.items():
+                self.data_written = False
+                print('Write calibration', bs, 'to RAM')
+                lh_mem.write_calib_data(bs, calib, self._data_written, write_failed_cb=self._data_failed)
+
+                while not self.data_written:
+                    time.sleep(0.1)
+
+            print('Persist data')
+            scf.cf.loc.receivedLocationPacket.add_callback(self._data_persisted)
+            scf.cf.loc.send_lh_persist_data_packet(list(range(16)), list(range(16)))
+
+            while not self.result_received:
+                time.sleep(0.1)
+
+
+    def _data_written(self, mem, addr):
+        self.data_written = True
+
+    def _data_failed(self, mem, addr):
+        raise Exception('Write to RAM failed')
+
+    def _data_persisted(self, data):
+        if (data.data):
+            print('Data persisted')
+        else:
+            raise Exception("Write to storage failed")
+
+        self.result_received = True
 
 
 geo0 = LighthouseBsGeometry()
-geo0.origin = [-1.01977998,-0.19424433, 1.97086964]
-geo0.rotation_matrix = [[ 0.66385385,-0.26347329, 0.6999142 ], [0.18206993,0.96466617,0.19044612], [-0.72536102, 0.00100494, 0.68836792], ]
+geo0.origin = [2.73545634,0.59442165,2.43717962]
+geo0.rotation_matrix = [[-0.7463173 , 0.0977276 ,-0.65837664], [-0.14741476,-0.988866  , 0.02032072], [-0.64906038, 0.11222014, 0.75241429], ]
 geo0.valid = True
 
 geo1 = LighthouseBsGeometry()
-geo1.origin = [0, 0, 0]
-geo1.rotation_matrix = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
-geo1.valid = False
+geo1.origin = [-1.91572345,-0.22066576, 2.37044577]
+geo1.rotation_matrix = [[ 0.73640365,-0.12335235, 0.66520212], [ 0.17914481, 0.9836941 ,-0.01590782], [-0.65239313, 0.13088209, 0.74649386], ]
+geo1.valid = True
 
 calib0 = LighthouseBsCalibration()
-calib0.sweeps[0].tilt = -0.047353
-calib0.sweeps[0].phase = 0.000000
-calib0.sweeps[0].curve = 0.478887
-calib0.sweeps[0].gibphase = 1.023093
-calib0.sweeps[0].gibmag = 0.005071
-calib0.sweeps[0].ogeephase = 1.136886
-calib0.sweeps[0].ogeemag = -0.520102
-calib0.sweeps[1].tilt = 0.049104
-calib0.sweeps[1].phase = -0.006642
-calib0.sweeps[1].curve = 0.675827
-calib0.sweeps[1].gibphase = 2.367835
-calib0.sweeps[1].gibmag = 0.004907
-calib0.sweeps[1].ogeephase = 1.900456
-calib0.sweeps[1].ogeemag = -0.457289
-calib0.uid = 0x3C65D22F
+calib0.sweeps[0].tilt = -0.04730224609375
+calib0.sweeps[0].phase = 0.0
+calib0.sweeps[0].curve = 0.08477783203125
+calib0.sweeps[0].gibphase = 2.4375
+calib0.sweeps[0].gibmag = -0.00467681884765625
+calib0.sweeps[0].ogeephase = 0.37548828125
+calib0.sweeps[0].ogeemag = -0.2259521484375
+calib0.sweeps[1].tilt = 0.04510498046875
+calib0.sweeps[1].phase = -0.006591796875
+calib0.sweeps[1].curve = 0.342529296875
+calib0.sweeps[1].gibphase = 0.049346923828125
+calib0.sweeps[1].gibmag = 0.0035724639892578125
+calib0.sweeps[1].ogeephase = 0.96875
+calib0.sweeps[1].ogeemag = -0.324951171875
 calib0.valid = True
 
 calib1 = LighthouseBsCalibration()
-calib1.sweeps[0].tilt = -0.048959
-calib1.sweeps[0].phase = 0.000000
-calib1.sweeps[0].curve = 0.144913
-calib1.sweeps[0].gibphase = 1.288635
-calib1.sweeps[0].gibmag = -0.005397
-calib1.sweeps[0].ogeephase = 2.004001
-calib1.sweeps[0].ogeemag = 0.033096
-calib1.sweeps[1].tilt = 0.047509
-calib1.sweeps[1].phase = -0.004676
-calib1.sweeps[1].curve = 0.374379
-calib1.sweeps[1].gibphase = 1.727613
-calib1.sweeps[1].gibmag = -0.005642
-calib1.sweeps[1].ogeephase = 2.586835
-calib1.sweeps[1].ogeemag = 0.117884
-calib1.uid = 0x34C2AD7E
+calib1.sweeps[0].tilt = -0.053497314453125
+calib1.sweeps[0].phase = 0.0
+calib1.sweeps[0].curve = 0.16259765625
+calib1.sweeps[0].gibphase = 2.650390625
+calib1.sweeps[0].gibmag = -0.004192352294921875
+calib1.sweeps[0].ogeephase = 0.52587890625
+calib1.sweeps[0].ogeemag = -0.343017578125
+calib1.sweeps[1].tilt = 0.043487548828125
+calib1.sweeps[1].phase = -0.007122039794921875
+calib1.sweeps[1].curve = 0.2548828125
+calib1.sweeps[1].gibphase = 0.315185546875
+calib1.sweeps[1].gibmag = 0.0024089813232421875
+calib1.sweeps[1].ogeephase = 1.216796875
+calib1.sweeps[1].ogeemag = -0.33935546875
 calib1.valid = True
 
 
