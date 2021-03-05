@@ -62,8 +62,14 @@ void powerDistributionInit(void)
 {
   motorsInit(platformConfigGetMotorMapping());
   
+  // values used for MAVLab order: #10, #14, #18
+  // servoTrims.roll = 0.0;
+  // servoTrims.pitch = 0.0;
+  // servoTrims.yaw = 0.05;
+
+  // values used for MAVLab order: #11
   servoTrims.roll = 0.0;
-  servoTrims.pitch = 0.23;
+  servoTrims.pitch = 0.2;
   servoTrims.yaw = 0.05;
 }
 
@@ -105,7 +111,7 @@ void powerDistribution(const control_t *control)
  
   static int16_t act_max = 32767;
   
-  motorPower.m2 = limitThrust(act_max * (1 + servoTrims.pitch) - pitch_ampl*control->pitch); // pitch servo
+  motorPower.m2 = limitThrust(act_max * (1 + servoTrims.pitch) + pitch_ampl*control->pitch); // pitch servo
   motorPower.m3 = limitThrust(act_max * (1 + servoTrims.yaw) - control->yaw); // yaw servo
   
   motorPower.m1 = limitThrust( 0.5f * control->roll + control->thrust * (1 + servoTrims.roll) ); // left motor
