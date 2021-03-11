@@ -74,10 +74,10 @@ static float invSqrt(float x);
 
 void sensfusion6Init()
 {
-  q0 = 1.0;
-  q1 = 0.0;
-  q2 = 0.0;
-  q3 = 0.0;
+  qw = 1.0;
+  qx = 0.0;
+  qy = 0.0;
+  qz = 0.0;
   if(isInit)
     return;
 
